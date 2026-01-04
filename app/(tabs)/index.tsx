@@ -1,38 +1,69 @@
 import React, { useState } from "react";
 import {
+  Alert,
   Button,
   FlatList,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+type Nutrition = {
+  name: string;
+  calories: string;
+  fat: string;
+  protein: string;
+  carbs: string;
+  fiber: string;
+};
+
 export default function HomeScreen() {
-  const [text, setText] = useState<string>("");
-  const [todos, setTodos] = useState<string[]>([]);
+  const [nutrition, setNutrition] = useState<Nutrition>({
+    name: '',
+    calories: '',
+    fat: '',
+    protein: '',
+    carbs: '',
+    fiber: '',
+  });
+  const [diary, setDiary] = useState<Nutrition[]>([]);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
 
   const addTodo = () => {
-    if (text.trim().length === 0) return;
-    setTodos((prev) => [...prev, text]);
-    setText("");
+    const name = (nutrition.name || '').trim() || 'Quick Add';
+    const calories = (nutrition.calories || '').trim();
+
+    if (calories.length === 0) {
+      Alert.alert('Validation', 'Calories is required');
+      return;
+    }
+    const caloriesNum = Number(calories);
+    if (!Number.isFinite(caloriesNum) || isNaN(caloriesNum)) {
+      Alert.alert('Validation', 'Calories must be a valid number');
+      return;
+    }
+
+    const payload: Nutrition = { ...nutrition, name, calories };
+    setDiary((prev) => [...prev, payload]);
+    setNutrition({ name: '', calories: '', fat: '', protein: '', carbs: '', fiber: '' });
     setModalVisible(false);
   };
 
   return (
     <SafeAreaProvider style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Todo List */}
+        {/* Diary */}
         <FlatList
-          data={todos}
+          data={diary}
           keyExtractor={(_, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={styles.todoItem}>
-              <Text>{item}</Text>
+              <Text>{JSON.stringify(item)}</Text>
             </View>
           )}
         />
@@ -53,22 +84,73 @@ export default function HomeScreen() {
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+            <ScrollView
+              contentContainerStyle={styles.modalContentContainer}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Add Todo</Text>
 
+              <Text style={styles.fieldLabel}>Name</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter a todo"
-                value={text}
-                onChangeText={setText}
+                placeholder="Name"
+                value={nutrition.name}
+                onChangeText={(val) => setNutrition((p) => ({ ...p, name: val }))}
+              />
+
+              <Text style={styles.fieldLabel}>Calories</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Calories"
+                value={nutrition.calories}
+                onChangeText={(val) => setNutrition((p) => ({ ...p, calories: val }))}
+                keyboardType="numeric"
                 autoFocus
               />
 
-              <View style={styles.modalButtons}>
-                <Button title="Cancel" onPress={() => setModalVisible(false)} />
-                <Button title="Add" onPress={addTodo} />
+              <Text style={styles.fieldLabel}>Fat (g)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Fat (g)"
+                value={nutrition.fat}
+                onChangeText={(val) => setNutrition((p) => ({ ...p, fat: val }))}
+                keyboardType="numeric"
+              />
+
+              <Text style={styles.fieldLabel}>Protein (g)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Protein (g)"
+                value={nutrition.protein}
+                onChangeText={(val) => setNutrition((p) => ({ ...p, protein: val }))}
+                keyboardType="numeric"
+              />
+
+              <Text style={styles.fieldLabel}>Carbs (g)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Carbs (g)"
+                value={nutrition.carbs}
+                onChangeText={(val) => setNutrition((p) => ({ ...p, carbs: val }))}
+                keyboardType="numeric"
+              />
+
+              <Text style={styles.fieldLabel}>Fiber (g)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Fiber (g)"
+                value={nutrition.fiber}
+                onChangeText={(val) => setNutrition((p) => ({ ...p, fiber: val }))}
+                keyboardType="numeric"
+              />
+
+                <View style={styles.modalButtons}>
+                  <Button title="Cancel" onPress={() => setModalVisible(false)} />
+                  <Button title="Add" onPress={addTodo} />
+                </View>
               </View>
-            </View>
+            </ScrollView>
           </View>
         </Modal>
       </View>
@@ -121,11 +203,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
+    maxHeight: '80%',
+  },
+  modalContentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 12,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
+    color: '#222',
   },
   input: {
     borderWidth: 1,
