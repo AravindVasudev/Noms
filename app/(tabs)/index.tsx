@@ -1,15 +1,12 @@
-import React, { useState } from "react";
+import { useDiary } from '@/app/diary-context';
+import { useRouter } from 'expo-router';
+import React from "react";
 import {
-  Alert,
-  Button,
   FlatList,
-  Modal,
-  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -23,36 +20,8 @@ type Nutrition = {
 };
 
 export default function HomeScreen() {
-  const [nutrition, setNutrition] = useState<Nutrition>({
-    name: '',
-    calories: '',
-    fat: '',
-    protein: '',
-    carbs: '',
-    fiber: '',
-  });
-  const [diary, setDiary] = useState<Nutrition[]>([]);
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-
-  const addTodo = () => {
-    const name = (nutrition.name || '').trim() || 'Quick Add';
-    const calories = (nutrition.calories || '').trim();
-
-    if (calories.length === 0) {
-      Alert.alert('Validation', 'Calories is required');
-      return;
-    }
-    const caloriesNum = Number(calories);
-    if (!Number.isFinite(caloriesNum) || isNaN(caloriesNum)) {
-      Alert.alert('Validation', 'Calories must be a valid number');
-      return;
-    }
-
-    const payload: Nutrition = { ...nutrition, name, calories };
-    setDiary((prev) => [...prev, payload]);
-    setNutrition({ name: '', calories: '', fat: '', protein: '', carbs: '', fiber: '' });
-    setModalVisible(false);
-  };
+  const router = useRouter();
+  const { diary } = useDiary();
 
   return (
     <SafeAreaProvider style={styles.safeArea}>
@@ -61,98 +30,33 @@ export default function HomeScreen() {
         <FlatList
           data={diary}
           keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.todoItem}>
-              <Text>{JSON.stringify(item)}</Text>
-            </View>
-          )}
+          renderItem={({ item }) => {
+            const name = item.name?.trim() || 'Quick Add';
+            const calories = item.calories?.trim() || '-';
+            const fat = item.fat?.trim() || '-';
+            const carbs = item.carbs?.trim() || '-';
+            const protein = item.protein?.trim() || '-';
+            const fiber = item.fiber?.trim() || '-';
+
+            return (
+              <View style={styles.todoItem}>
+                <Text style={styles.diaryName}>{name}</Text>
+                <Text style={styles.diaryCalories}>{calories} Cal</Text>
+                <Text style={styles.diaryDetails}>
+                  (F: {fat}  C: {carbs}  P: {protein}  Fi: {fiber})
+                </Text>
+              </View>
+            );
+          }}
         />
 
         {/* Floating + Button */}
         <TouchableOpacity
           style={styles.fab}
-          onPress={() => setModalVisible(true)}
+          onPress={() => router.push('/add')}
         >
           <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>
-
-        {/* Modal Popup */}
-        <Modal
-          visible={modalVisible}
-          animationType="slide"
-          transparent
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <ScrollView
-              contentContainerStyle={styles.modalContentContainer}
-              keyboardShouldPersistTaps="handled"
-            >
-              <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Add Todo</Text>
-
-              <Text style={styles.fieldLabel}>Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Name"
-                value={nutrition.name}
-                onChangeText={(val) => setNutrition((p) => ({ ...p, name: val }))}
-              />
-
-              <Text style={styles.fieldLabel}>Calories</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Calories"
-                value={nutrition.calories}
-                onChangeText={(val) => setNutrition((p) => ({ ...p, calories: val }))}
-                keyboardType="numeric"
-                autoFocus
-              />
-
-              <Text style={styles.fieldLabel}>Fat (g)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Fat (g)"
-                value={nutrition.fat}
-                onChangeText={(val) => setNutrition((p) => ({ ...p, fat: val }))}
-                keyboardType="numeric"
-              />
-
-              <Text style={styles.fieldLabel}>Protein (g)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Protein (g)"
-                value={nutrition.protein}
-                onChangeText={(val) => setNutrition((p) => ({ ...p, protein: val }))}
-                keyboardType="numeric"
-              />
-
-              <Text style={styles.fieldLabel}>Carbs (g)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Carbs (g)"
-                value={nutrition.carbs}
-                onChangeText={(val) => setNutrition((p) => ({ ...p, carbs: val }))}
-                keyboardType="numeric"
-              />
-
-              <Text style={styles.fieldLabel}>Fiber (g)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Fiber (g)"
-                value={nutrition.fiber}
-                onChangeText={(val) => setNutrition((p) => ({ ...p, fiber: val }))}
-                keyboardType="numeric"
-              />
-
-                <View style={styles.modalButtons}>
-                  <Button title="Cancel" onPress={() => setModalVisible(false)} />
-                  <Button title="Add" onPress={addTodo} />
-                </View>
-              </View>
-            </ScrollView>
-          </View>
-        </Modal>
       </View>
     </SafeAreaProvider>
   );
@@ -231,5 +135,20 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  diaryName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  diaryCalories: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  diaryDetails: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
   },
 });
