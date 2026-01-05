@@ -1,7 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAppSelector } from '../../lib/store';
 
 type Totals = {
   calories: number;
@@ -17,25 +17,7 @@ type Props = {
 };
 
 export default function Aggregates({ totals, onAdd }: Props) {
-  const [goals, setGoals] = useState({
-    calories: '',
-    protein: '',
-    fiber: '',
-    fat: '',
-    carbs: '',
-  });
-
-  useEffect(() => {
-    const loadGoals = async () => {
-      const calories = await AsyncStorage.getItem('goal-calories') || '';
-      const protein = await AsyncStorage.getItem('goal-protein') || '';
-      const fiber = await AsyncStorage.getItem('goal-fiber') || '';
-      const fat = await AsyncStorage.getItem('goal-fat') || '';
-      const carbs = await AsyncStorage.getItem('goal-carbs') || '';
-      setGoals({ calories, protein, fiber, fat, carbs });
-    };
-    loadGoals();
-  }, []);
+  const goals = useAppSelector(state => state.goals);
 
   const renderValue = (value: number, goal: string, unit: string) => {
     const goalNum = parseFloat(goal);

@@ -1,4 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setGoalsAsync } from '@/lib/goalsSlice';
+import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
@@ -7,10 +8,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function GoalsScreen() {
   const router = useRouter();
   const { from } = useLocalSearchParams();
+  const dispatch = useAppDispatch();
+  const goals = useAppSelector(state => state.goals);
 
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [goals, setGoals] = useState({
+  const [localGoals, setLocalGoals] = useState({
     calories: '',
     protein: '',
     fiber: '',
@@ -18,12 +21,12 @@ export default function GoalsScreen() {
     carbs: '',
   });
 
+  useEffect(() => {
+    setLocalGoals(goals);
+  }, [goals]);
+
   const onSetGoals = async () => {
-    if (goals.calories.trim()) await AsyncStorage.setItem('goal-calories', goals.calories);
-    if (goals.protein.trim()) await AsyncStorage.setItem('goal-protein', goals.protein);
-    if (goals.fiber.trim()) await AsyncStorage.setItem('goal-fiber', goals.fiber);
-    if (goals.fat.trim()) await AsyncStorage.setItem('goal-fat', goals.fat);
-    if (goals.carbs.trim()) await AsyncStorage.setItem('goal-carbs', goals.carbs);
+    dispatch(setGoalsAsync(localGoals));
     Alert.alert('Success', 'Goals set successfully!', [
       {
         text: 'OK',
@@ -37,18 +40,6 @@ export default function GoalsScreen() {
       }
     ]);
   };
-
-  useEffect(() => {
-    const loadGoals = async () => {
-      const calories = await AsyncStorage.getItem('goal-calories') || '';
-      const protein = await AsyncStorage.getItem('goal-protein') || '';
-      const fiber = await AsyncStorage.getItem('goal-fiber') || '';
-      const fat = await AsyncStorage.getItem('goal-fat') || '';
-      const carbs = await AsyncStorage.getItem('goal-carbs') || '';
-      setGoals({ calories, protein, fiber, fat, carbs });
-    };
-    loadGoals();
-  }, []);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -81,19 +72,19 @@ export default function GoalsScreen() {
             <Text style={styles.title}>Set Daily Goals</Text>
 
             <Text style={styles.label}>Goal Calories</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={goals.calories} onChangeText={(v) => setGoals((p) => ({ ...p, calories: v }))} />
+            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.calories} onChangeText={(v) => setLocalGoals((p) => ({ ...p, calories: v }))} />
 
             <Text style={styles.label}>Goal Protein (g)</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={goals.protein} onChangeText={(v) => setGoals((p) => ({ ...p, protein: v }))} />
+            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.protein} onChangeText={(v) => setLocalGoals((p) => ({ ...p, protein: v }))} />
 
             <Text style={styles.label}>Goal Fiber (g)</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={goals.fiber} onChangeText={(v) => setGoals((p) => ({ ...p, fiber: v }))} />
+            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.fiber} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fiber: v }))} />
 
             <Text style={styles.label}>Goal Fat (g)</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={goals.fat} onChangeText={(v) => setGoals((p) => ({ ...p, fat: v }))} />
+            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.fat} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fat: v }))} />
 
             <Text style={styles.label}>Goal Carbs (g)</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={goals.carbs} onChangeText={(v) => setGoals((p) => ({ ...p, carbs: v }))} />
+            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.carbs} onChangeText={(v) => setLocalGoals((p) => ({ ...p, carbs: v }))} />
 
             <View style={styles.buttons}>
               <TouchableOpacity style={styles.button} onPress={() => router.back()}>

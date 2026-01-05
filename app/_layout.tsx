@@ -9,6 +9,7 @@ import { Provider } from 'react-redux';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { initializeDiary } from '@/lib/diarySlice';
+import { initializeGoals } from '@/lib/goalsSlice';
 import store, { useAppDispatch } from '@/lib/store';
 
 export const unstable_settings = {
@@ -21,6 +22,7 @@ function AppContent() {
 
   useEffect(() => {
     dispatch(initializeDiary());
+    dispatch(initializeGoals());
   }, [dispatch]);
 
   return (

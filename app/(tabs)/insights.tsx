@@ -1,5 +1,4 @@
 import { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel } from '@/lib/date';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,8 +16,16 @@ export default function Insights() {
   const [carbsData, setCarbsData] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [duration, setDuration] = useState<number>(7);
-  const [goals, setGoals] = useState({ calories: 0, protein: 0, fiber: 0, fat: 0, carbs: 0 });
   const diary = useAppSelector(state => state.diary.diary);
+  const goalsStrings = useAppSelector(state => state.goals);
+
+  const goals = useMemo(() => ({
+    calories: parseFloat(goalsStrings.calories) || 0,
+    protein: parseFloat(goalsStrings.protein) || 0,
+    fiber: parseFloat(goalsStrings.fiber) || 0,
+    fat: parseFloat(goalsStrings.fat) || 0,
+    carbs: parseFloat(goalsStrings.carbs) || 0,
+  }), [goalsStrings]);
 
   const durationOptions = useMemo(
     () =>
@@ -34,18 +41,6 @@ export default function Insights() {
     () => durationOptions.find((item) => item.value === duration)?.label ?? 'Week',
     [duration, durationOptions],
   );
-
-  useEffect(() => {
-    const loadGoals = async () => {
-      const calories = parseFloat(await AsyncStorage.getItem('goal-calories') || '0');
-      const protein = parseFloat(await AsyncStorage.getItem('goal-protein') || '0');
-      const fiber = parseFloat(await AsyncStorage.getItem('goal-fiber') || '0');
-      const fat = parseFloat(await AsyncStorage.getItem('goal-fat') || '0');
-      const carbs = parseFloat(await AsyncStorage.getItem('goal-carbs') || '0');
-      setGoals({ calories, protein, fiber, fat, carbs });
-    };
-    loadGoals();
-  }, []);
 
   useEffect(() => {
     const dayKeys = getLastNDaysKeys(duration);
