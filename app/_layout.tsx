@@ -32,16 +32,15 @@ export default function RootLayout() {
     }
   }, [signedUp, router]);
 
-  if (signedUp === null) {
-    return null; // or loading screen
-  }
-
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <DiaryProvider>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="signup" options={{ headerShown: false }} />
+            <Stack.Screen name="add" options={{ headerShown: false }} />
+            <Stack.Screen name="goals" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
         </DiaryProvider>

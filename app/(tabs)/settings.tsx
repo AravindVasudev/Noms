@@ -22,7 +22,7 @@ export default function Settings() {
     clearAll();
     await AsyncStorage.multiRemove(['goal-calories', 'goal-protein', 'goal-fiber', 'goal-fat', 'goal-carbs', 'username', 'signedUp']);
     Alert.alert('Data Cleared', 'All app data has been cleared.');
-    router.replace('/(auth)/signup');
+    router.replace('/signup');
   };
 
   return (
