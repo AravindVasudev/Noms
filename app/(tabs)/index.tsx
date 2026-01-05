@@ -1,15 +1,14 @@
 import { useDiary } from '@/app/diary-context';
+import JourneyEntries from '@/components/ui/journey-entries';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-  FlatList,
   SafeAreaView,
   StyleSheet,
   Text,
   View
 } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Aggregates from '../../components/ui/aggregates';
 import DatePicker from '../../components/ui/date-picker';
@@ -57,35 +56,10 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Date picker */}
         <DatePicker value={selectedDate} onChange={setSelectedDate} />
         <Aggregates totals={totals} onAdd={() => router.push({ pathname: '/add', params: { date: selectedDate } })} />
         <Text style={styles.journeyTitle}>Journey Entries</Text>
-
-        {/* Diary */}
-        <FlatList
-          data={filteredDiary}
-          keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item, index }) => {
-            const name = (item.name || '').trim() || 'Quick Add';
-            const calories = typeof item.calories === 'number' ? item.calories.toString() : '-';
-            const fat = typeof item.fat === 'number' ? item.fat.toString() : '-';
-            const carbs = typeof item.carbs === 'number' ? item.carbs.toString() : '-';
-            const protein = typeof item.protein === 'number' ? item.protein.toString() : '-';
-            const fiber = typeof item.fiber === 'number' ? item.fiber.toString() : '-';
-            return (
-              <Swipeable renderRightActions={renderRight(item)}>
-                <View style={styles.todoItem}>
-                  <Text style={styles.diaryName}>{name}</Text>
-                  <Text style={styles.diaryCalories}>{calories} Cal</Text>
-                  <Text style={styles.diaryDetails}>
-                    (F: {fat}g  C: {carbs}g  P: {protein}g  Fi: {fiber}g)
-                  </Text>
-                </View>
-              </Swipeable>
-            );
-          }}
-        />
+        <JourneyEntries diary={diary} selectedDate={selectedDate} removeEntry={removeEntry} />
       </View>
     </SafeAreaView>
   );
@@ -208,7 +182,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 6,
   },
-  
+
   dateNavTextDisabled: {
     color: '#a0bce8',
   },
