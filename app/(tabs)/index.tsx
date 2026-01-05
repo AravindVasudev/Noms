@@ -2,15 +2,13 @@ import { useDiary } from '@/components/diary-context';
 import JourneyEntries from '@/components/ui/journey-entries';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import {
-  StyleSheet
-} from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Aggregates from '../../components/ui/aggregates';
 import DatePicker from '../../components/ui/date-picker';
 
 
-export default function HomeScreen() {
+export default function Diary() {
   const router = useRouter();
   const { diary, removeEntry } = useDiary();
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -38,7 +36,17 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
         <DatePicker value={selectedDate} onChange={setSelectedDate} />
         <Aggregates totals={totals} onAdd={() => router.push({ pathname: '/add', params: { date: selectedDate } })} />
-        <JourneyEntries diary={diary} selectedDate={selectedDate} removeEntry={removeEntry} />
+        {filteredDiary.length === 0 ? (
+          <Pressable
+            style={styles.emptyContainer}
+            onPress={() => router.push({ pathname: '/add', params: { date: selectedDate } })}
+            accessibilityRole="button"
+          >
+            <Text style={styles.emptyText}>No food logged. Click here to add.</Text>
+          </Pressable>
+        ) : (
+          <JourneyEntries diary={diary} selectedDate={selectedDate} removeEntry={removeEntry} />
+        )}
     </SafeAreaView>
   );
 }
@@ -48,5 +56,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     padding: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#888',
+    fontSize: 16,
   },
 });
