@@ -28,6 +28,8 @@ export default function JourneyEntries({ diary, selectedDate, removeEntry }: Pro
   };
 
   return (
+    <>
+    <Text style={styles.journeyTitle}>Journey Entries</Text>
     <FlatList
       data={entries}
       keyExtractor={(_, index) => index.toString()}
@@ -51,6 +53,7 @@ export default function JourneyEntries({ diary, selectedDate, removeEntry }: Pro
         );
       }}
     />
+    </>
   );
 }
 
@@ -86,5 +89,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontWeight: '700',
+  },
+  journeyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0a3d9a',
+    marginBottom: 8,
+    marginTop: 6,
   },
 });
