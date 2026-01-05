@@ -6,8 +6,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { RectButton } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 type Nutrition = {
@@ -21,7 +23,15 @@ type Nutrition = {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { diary } = useDiary();
+  const { diary, removeEntry } = useDiary();
+
+  const renderRight = (index: number) => {
+    return () => (
+      <RectButton style={styles.rightAction} onPress={() => removeEntry(index)}>
+        <Text style={styles.actionText}>✕</Text>
+      </RectButton>
+    );
+  };
 
   return (
     <SafeAreaProvider style={styles.safeArea}>
@@ -30,22 +40,23 @@ export default function HomeScreen() {
         <FlatList
           data={diary}
           keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const name = item.name?.trim() || 'Quick Add';
             const calories = item.calories?.trim() || '-';
             const fat = item.fat?.trim() || '-';
             const carbs = item.carbs?.trim() || '-';
             const protein = item.protein?.trim() || '-';
             const fiber = item.fiber?.trim() || '-';
-
             return (
-              <View style={styles.todoItem}>
-                <Text style={styles.diaryName}>{name}</Text>
-                <Text style={styles.diaryCalories}>{calories} Cal</Text>
-                <Text style={styles.diaryDetails}>
-                  (F: {fat}  C: {carbs}  P: {protein}  Fi: {fiber})
-                </Text>
-              </View>
+              <Swipeable renderRightActions={renderRight(index)}>
+                <View style={styles.todoItem}>
+                  <Text style={styles.diaryName}>{name}</Text>
+                  <Text style={styles.diaryCalories}>{calories} Cal</Text>
+                  <Text style={styles.diaryDetails}>
+                    (F: {fat}g  C: {carbs}g  P: {protein}g  Fi: {fiber}g)
+                  </Text>
+                </View>
+              </Swipeable>
             );
           }}
         />
@@ -150,5 +161,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 4,
+  },
+  rightAction: {
+    backgroundColor: '#ff3b30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+  },
+  actionText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
   },
 });
