@@ -48,8 +48,6 @@ export default function AddScreen() {
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.container}>
             <Text style={styles.title}>Add Entry</Text>
-            <Text>aaa {paramDate}</Text>
-
             <Text style={styles.label}>Name</Text>
             <TextInput style={styles.input} value={nutrition.name} onChangeText={(v) => setNutrition((p) => ({ ...p, name: v }))} />
 

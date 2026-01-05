@@ -13,18 +13,21 @@ import {
 import { RectButton } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import DatePicker from '../../components/ui/date-picker';
 
 
 export default function HomeScreen() {
   const router = useRouter();
   const { diary, removeEntry } = useDiary();
   const insets = useSafeAreaInsets();
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
-
-  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
-
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  });
   const filteredDiary = useMemo(() => diary.filter((d) => d.date === selectedDate), [diary, selectedDate]);
-  const canGoNext = useMemo(() => selectedDate < todayISO, [selectedDate, todayISO]);
 
   const totals = filteredDiary.reduce(
     (acc, cur) => {
@@ -56,30 +59,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Date picker */}
-        <View style={styles.dateRow}>
-          <TouchableOpacity onPress={() => {
-            const d = new Date(selectedDate);
-            d.setDate(d.getDate() - 1);
-            setSelectedDate(d.toISOString().slice(0,10));
-          }} style={styles.dateNav}>
-            <Text style={styles.dateNavText}>◀</Text>
-          </TouchableOpacity>
-          <Text style={styles.dateLabel}>{new Date(selectedDate).toDateString()}</Text>
-          <TouchableOpacity
-            disabled={!canGoNext}
-            onPress={() => {
-              const d = new Date(selectedDate);
-              d.setDate(d.getDate() + 1);
-              const nextISO = d.toISOString().slice(0,10);
-              if (nextISO <= todayISO) setSelectedDate(nextISO);
-            }}
-            style={styles.dateNav}
-          >
-            <Text style={[styles.dateNavText, !canGoNext && styles.dateNavTextDisabled]}>▶</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Aggregates + Diary */}
+        <DatePicker value={selectedDate} onChange={setSelectedDate} />
 
         <LinearGradient
           colors={['#e9f4ff', '#ffffff']}
@@ -309,25 +289,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 6,
   },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  dateNav: {
-    padding: 8,
-    marginHorizontal: 12,
-  },
-  dateNavText: {
-    fontSize: 18,
-    color: '#007AFF',
-  },
-  dateLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#034ea6',
-  },
+  
   dateNavTextDisabled: {
     color: '#a0bce8',
   },
