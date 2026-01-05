@@ -103,6 +103,7 @@ export default function Insights() {
           goal={goals.calories > 0 ? goals.calories : undefined}
           yAxisSuffix=" kcal"
           width={screenWidth}
+          scrollable={duration > 7}
         />
         <LineChartCard
           title={`Last ${selectedDurationLabel} — Protein`}
@@ -111,6 +112,7 @@ export default function Insights() {
           goal={goals.protein > 0 ? goals.protein : undefined}
           yAxisSuffix=" g"
           width={screenWidth}
+          scrollable={duration > 7}
         />
         <LineChartCard
           title={`Last ${selectedDurationLabel} — Fiber`}
@@ -119,6 +121,7 @@ export default function Insights() {
           goal={goals.fiber > 0 ? goals.fiber : undefined}
           yAxisSuffix=" g"
           width={screenWidth}
+          scrollable={duration > 7}
         />
         <LineChartCard
           title={`Last ${selectedDurationLabel} — Fats`}
@@ -127,6 +130,7 @@ export default function Insights() {
           goal={goals.fat > 0 ? goals.fat : undefined}
           yAxisSuffix=" g"
           width={screenWidth}
+          scrollable={duration === 7}
         />
         <LineChartCard
           title={`Last ${selectedDurationLabel} — Carbs`}
@@ -135,6 +139,7 @@ export default function Insights() {
           goal={goals.carbs > 0 ? goals.carbs : undefined}
           yAxisSuffix=" g"
           width={screenWidth}
+          scrollable={duration === 7}
         />
       </ScrollView>
     </SafeAreaView>

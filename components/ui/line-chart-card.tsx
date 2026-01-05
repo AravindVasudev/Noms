@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
 interface LineChartCardProps {
@@ -10,10 +10,12 @@ interface LineChartCardProps {
   yAxisSuffix?: string;
   width?: number;
   height?: number;
+  scrollable?: boolean;
 }
 
-export function LineChartCard({ title, labels, dataPoints, goal, yAxisSuffix = '', width, height = 220 }: LineChartCardProps) {
-  const chartWidth = width ?? Dimensions.get('window').width - 32;
+export function LineChartCard({ title, labels, dataPoints, goal, yAxisSuffix = '', width, height = 220, scrollable = false }: LineChartCardProps) {
+  const screenWidth = Dimensions.get('window').width - 32;
+  const chartWidth = scrollable ? Math.max(screenWidth, labels.length * 60) : (width ?? screenWidth);
 
   const datasets = [{ data: dataPoints }];
   if (goal !== undefined) {
@@ -24,30 +26,40 @@ export function LineChartCard({ title, labels, dataPoints, goal, yAxisSuffix = '
     } as any);
   }
 
+  const chartComponent = (
+    <LineChart
+      data={{ labels: labels, datasets: datasets }}
+      width={chartWidth}
+      height={height}
+      yAxisSuffix={yAxisSuffix}
+      yAxisInterval={1}
+      chartConfig={{
+        backgroundColor: '#ffffff',
+        backgroundGradientFrom: '#ffffff',
+        backgroundGradientTo: '#ffffff',
+        decimalPlaces: 0,
+        color: (opacity = 1) => `rgba(34, 150, 243, ${opacity})`,
+        labelColor: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
+        style: { borderRadius: 8 },
+        propsForDots: { r: '4', strokeWidth: '2', stroke: '#22a6f3' },
+      }}
+      bezier
+      style={{ borderRadius: 8 }}
+      fromZero
+    />
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.chartWrapper}>
-        <LineChart
-          data={{ labels: labels, datasets: datasets }}
-          width={chartWidth}
-          height={height}
-          yAxisSuffix={yAxisSuffix}
-          yAxisInterval={1}
-          chartConfig={{
-            backgroundColor: '#ffffff',
-            backgroundGradientFrom: '#ffffff',
-            backgroundGradientTo: '#ffffff',
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(34, 150, 243, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
-            style: { borderRadius: 8 },
-            propsForDots: { r: '4', strokeWidth: '2', stroke: '#22a6f3' },
-          }}
-          bezier
-          style={{ borderRadius: 8 }}
-          fromZero
-        />
+        {scrollable ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {chartComponent}
+          </ScrollView>
+        ) : (
+          chartComponent
+        )}
       </View>
     </View>
   );
