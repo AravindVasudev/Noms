@@ -1,16 +1,31 @@
-import { StyleSheet, Text } from 'react-native';
+import { useState } from "react";
+import { StyleSheet } from 'react-native';
+import DropDownPicker from "react-native-dropdown-picker";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function Settings() {
+const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(null);
+  const [items, setItems] = useState([
+    { label: "USA", value: "us" },
+    { label: "India", value: "in" },
+    { label: "France", value: "fr" },
+  ]);
+
   return (
-    <SafeAreaView><Text style={styles.text}>--- Settings ---</Text></SafeAreaView>
+    <SafeAreaView>
+    <DropDownPicker
+      open={open}
+      value={value}
+      items={items}
+      setOpen={setOpen}
+      setValue={setValue}
+      setItems={setItems}
+    />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  text: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
 });
