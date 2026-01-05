@@ -1,13 +1,13 @@
-import { useDiary } from '@/app/diary-context';
+import { useDiary } from '@/components/diary-context';
 import JourneyEntries from '@/components/ui/journey-entries';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Aggregates from '../../components/ui/aggregates';
 import DatePicker from '../../components/ui/date-picker';
 
@@ -51,113 +51,11 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   container: {
     flex: 1,
     padding: 16,
-  },
-  todoItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-
-  /* Floating Action Button */
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 30,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#007AFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
-  },
-  fabText: {
-    color: '#fff',
-    fontSize: 32,
-    lineHeight: 36,
-  },
-
-  /* Modal */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    maxHeight: '80%',
-  },
-  modalContentContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 6,
-    color: '#222',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 12,
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  diaryName: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 2,
-    color: '#034ea6',
-  },
-  diaryCalories: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#034ea6',
-  },
-  diaryDetails: {
-    fontSize: 12,
-    color: '#034ea6',
-    marginTop: 4,
-  },
-  rightAction: {
-    backgroundColor: '#ff3b30',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-  },
-  actionText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  aggregatesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-  aggregatesText: {
-    flex: 1,
   },
   journeyTitle: {
     fontSize: 18,
@@ -165,9 +63,5 @@ const styles = StyleSheet.create({
     color: '#0a3d9a',
     marginBottom: 8,
     marginTop: 6,
-  },
-
-  dateNavTextDisabled: {
-    color: '#a0bce8',
   },
 });

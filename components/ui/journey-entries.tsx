@@ -1,4 +1,4 @@
-import { Nutrition } from '@/app/diary-context';
+import { Nutrition } from '@/components/diary-context';
 import React, { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';

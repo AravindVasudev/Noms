@@ -1,4 +1,4 @@
-import { useDiary } from '@/app/diary-context';
+import { useDiary } from '@/components/diary-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
@@ -80,7 +80,6 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, justifyContent: 'center' },
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: '#034ea6' },
   label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6, color: '#034ea6' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 8 },
