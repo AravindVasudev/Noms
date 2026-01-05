@@ -1,16 +1,62 @@
-import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function ProfileCard() {
+  const [name, setName] = useState('User');
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempName, setTempName] = useState('');
+
+  useEffect(() => {
+    const loadName = async () => {
+      const stored = await AsyncStorage.getItem('username');
+      const displayName = stored || 'User';
+      setName(displayName);
+    };
+    loadName();
+  }, []);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setTempName(name);
+  };
+
+  const handleSave = async () => {
+    const newName = tempName.trim() || 'User';
+    setName(newName);
+    await AsyncStorage.setItem('username', newName);
+    setIsEditing(false);
+  };
+
   return (
     <View style={styles.profileCard}>
       <View style={styles.avatarContainer}>
         <Image
-          source={{ uri: 'https://ui-avatars.com/api/?name=User&size=120&background=2296f3&color=fff' }}
+          source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=120&background=2296f3&color=fff` }}
           style={styles.avatar}
         />
       </View>
-      <Text style={styles.name}>User</Text>
+      {isEditing ? (
+        <View style={styles.nameEditContainer}>
+          <TextInput
+            style={styles.nameInput}
+            value={tempName}
+            onChangeText={setTempName}
+            onSubmitEditing={handleSave}
+            onBlur={handleSave}
+            autoFocus
+            selectTextOnFocus
+          />
+          <Pressable onPress={handleSave} style={styles.checkButton}>
+            <Ionicons name="checkmark" size={24} color="#000" />
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable onPress={handleEdit}>
+          <Text style={styles.name}>{name}</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -42,5 +88,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     color: '#000',
+  },
+  nameInput: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#000',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingBottom: 4,
+    minWidth: 100,
+    textAlign: 'center',
+  },
+  nameEditContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkButton: {
+    marginLeft: 8,
   },
 });
