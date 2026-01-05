@@ -1,19 +1,28 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import db from '../../components/db';
+import { useDiary } from '../../components/diary-context';
 import ProfileCard from '../../components/ui/profile-card';
 import SettingsItem from '../../components/ui/settings-item';
 
 export default function Settings() {
   const router = useRouter();
+  const { clearAll } = useDiary();
 
   const handleSetGoals = () => {
     router.push('/goals');
   };
 
-  const handleClearAppData = () => {
-    console.log('Clear App Data pressed');
+  const handleClearAppData = async () => {
+    await db.dropTable();
+    await db.init();
+    clearAll();
+    await AsyncStorage.multiRemove(['goal-calories', 'goal-protein', 'goal-fiber', 'goal-fat', 'goal-carbs', 'username', 'signedUp']);
+    Alert.alert('Data Cleared', 'All app data has been cleared.');
+    router.replace('/(auth)/signup');
   };
 
   return (

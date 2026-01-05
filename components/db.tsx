@@ -74,6 +74,11 @@ class DB {
     const db = await this.getDb();
     await db.runAsync('DELETE FROM nutrition WHERE id = ?', [id]);
   }
+
+  async dropTable(): Promise<void> {
+    const db = await this.getDb();
+    await db.execAsync('DROP TABLE IF EXISTS nutrition');
+  }
 }
 
 const db = new DB();

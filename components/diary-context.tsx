@@ -16,6 +16,7 @@ type DiaryContextValue = {
   diary: Nutrition[];
   addEntry: (entry: Omit<Nutrition, 'id'>) => Promise<void>;
   removeEntry: (index: number) => Promise<void>;
+  clearAll: () => void;
 };
 
 const DiaryContext = createContext<DiaryContextValue | undefined>(undefined);
@@ -55,8 +56,12 @@ export function DiaryProvider({ children }: { children: ReactNode }) {
     setDiary((p) => p.filter((_, i) => i !== index));
   };
 
+  const clearAll = () => {
+    setDiary([]);
+  };
+
   return (
-    <DiaryContext.Provider value={{ diary, addEntry, removeEntry }}>{children}</DiaryContext.Provider>
+    <DiaryContext.Provider value={{ diary, addEntry, removeEntry, clearAll }}>{children}</DiaryContext.Provider>
   );
 }
 

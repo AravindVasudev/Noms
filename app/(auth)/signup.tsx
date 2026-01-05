@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SignUpScreenProps {
   onSignUp: () => void;
@@ -8,7 +9,10 @@ interface SignUpScreenProps {
 
 export default function SignUpScreen({ onSignUp, onContinue }: SignUpScreenProps) {
   return (
-    <View style={styles.signUpContainer}>
+    <SafeAreaView style={styles.signUpContainer}>
+      <View style={styles.logoContainer}>
+        <Image source={require('../../assets/images/favicon.png')} style={styles.favicon} />
+      </View>
       <View style={styles.buttonsContainer}>
         <TouchableOpacity style={styles.button} onPress={onSignUp}>
           <Text style={styles.buttonText}>Sign Up</Text>
@@ -17,11 +21,8 @@ export default function SignUpScreen({ onSignUp, onContinue }: SignUpScreenProps
           <Text style={styles.buttonText}>Continue without sign up</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.logoContainer}>
-        <Image source={require('../assets/images/favicon.png')} style={styles.favicon} />
-        <Text style={styles.appName}>Noms</Text>
-      </View>
-    </View>
+
+    </SafeAreaView>
   );
 }
 
@@ -34,8 +35,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   buttonsContainer: {
-    flex: 1,
-    justifyContent: 'center',
     width: '100%',
   },
   button: {
@@ -56,8 +55,8 @@ const styles = StyleSheet.create({
     marginBottom: 50,
   },
   favicon: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     marginBottom: 10,
   },
   appName: {
