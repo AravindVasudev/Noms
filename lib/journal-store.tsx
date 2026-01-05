@@ -51,7 +51,7 @@ class JournalStore {
     }));
   }
 
-  async insertEntry(entry: Omit<NutritionRow, 'id'>): Promise<number | undefined> {
+  async insertEntry(entry: Omit<NutritionRow, 'id'>): Promise<number> {
     const params = [
       entry.name,
       entry.calories,
@@ -62,11 +62,11 @@ class JournalStore {
       entry.date.toISOString(),
     ];
     const db = await this.getDb();
-    const res: any = await db.runAsync(
+    const res = await db.runAsync(
       'INSERT INTO nutrition (name, calories, fat, protein, carbs, fiber, date) VALUES (?, ?, ?, ?, ?, ?, ?)',
       params
     );
-    return res && (res as any).insertId ? (res as any).insertId : undefined;
+    return res.lastInsertRowId;
   }
 
   async deleteEntryById(id: number): Promise<void> {

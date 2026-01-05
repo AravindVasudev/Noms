@@ -1,62 +1,66 @@
 import { formatDateKey } from '@/lib/date';
-import { Nutrition } from '@/lib/diarySlice';
+import { Nutrition, removeEntryAsync } from '@/lib/diarySlice';
+import { useAppDispatch, useAppSelector } from '@/lib/store';
 import React, { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 type Props = {
-  diary: Nutrition[];
   selectedDate: Date;
-  removeEntry: (index: number) => void;
 };
 
-export default function JourneyEntries({ diary, selectedDate, removeEntry }: Props) {
+export default function JourneyEntries({ selectedDate }: Props) {
+  const diary = useAppSelector(state => state.diary.diary);
+  const dispatch = useAppDispatch();
   const entries = useMemo(() => {
     const selectedKey = formatDateKey(selectedDate);
     return diary.filter((d) => formatDateKey(d.date) === selectedKey);
   }, [diary, selectedDate]);
 
   const renderRight = (item: Nutrition) => {
-    return () => (
+    const Component = () => (
       <RectButton
         style={styles.rightAction}
         onPress={() => {
-          const idx = diary.findIndex((d) => d === item);
-          if (idx !== -1) removeEntry(idx);
+          if (item && item.id != null) {
+            dispatch(removeEntryAsync(item.id));
+          }
         }}
       >
         <Text style={styles.actionText}>✕</Text>
       </RectButton>
     );
+    Component.displayName = 'RightAction';
+    return Component;
   };
 
   return (
     <>
-    <Text style={styles.journeyTitle}>Journal Entries</Text>
-    <FlatList
-      data={entries}
-      keyExtractor={(_, index) => index.toString()}
-      renderItem={({ item }) => {
-        const name = (item.name || '').trim() || 'Quick Add';
-        const calories = typeof item.calories === 'number' ? item.calories.toString() : '-';
-        const fat = typeof item.fat === 'number' ? item.fat.toString() : '-';
-        const carbs = typeof item.carbs === 'number' ? item.carbs.toString() : '-';
-        const protein = typeof item.protein === 'number' ? item.protein.toString() : '-';
-        const fiber = typeof item.fiber === 'number' ? item.fiber.toString() : '-';
-        return (
-          <Swipeable renderRightActions={renderRight(item)}>
-            <View style={styles.item}>
-              <Text style={styles.name}>{name}</Text>
-              <Text style={styles.calories}>{calories} Cal</Text>
-              <Text style={styles.details}>
-                (F: {fat}g  C: {carbs}g  P: {protein}g  Fi: {fiber}g)
-              </Text>
-            </View>
-          </Swipeable>
-        );
-      }}
-    />
+      <Text style={styles.journeyTitle}>Journal Entries</Text>
+      <FlatList
+        data={entries}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={({ item }) => {
+          const name = (item.name || '').trim() || 'Quick Add';
+          const calories = typeof item.calories === 'number' ? item.calories.toString() : '-';
+          const fat = typeof item.fat === 'number' ? item.fat.toString() : '-';
+          const carbs = typeof item.carbs === 'number' ? item.carbs.toString() : '-';
+          const protein = typeof item.protein === 'number' ? item.protein.toString() : '-';
+          const fiber = typeof item.fiber === 'number' ? item.fiber.toString() : '-';
+          return (
+            <Swipeable renderRightActions={renderRight(item)}>
+              <View style={styles.item}>
+                <Text style={styles.name}>{name}</Text>
+                <Text style={styles.calories}>{calories} Cal</Text>
+                <Text style={styles.details}>
+                  (F: {fat}g  C: {carbs}g  P: {protein}g  Fi: {fiber}g)
+                </Text>
+              </View>
+            </Swipeable>
+          );
+        }}
+      />
     </>
   );
 }

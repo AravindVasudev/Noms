@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import journalStore from '../components/journal-store';
+import journalStore from './journal-store';
 
 export type Nutrition = {
   id?: number;
@@ -22,9 +22,9 @@ const addEntryAsync = createAsyncThunk('diary/addEntry', async (entry: Omit<Nutr
   return { ...entry, id: insertId } as Nutrition;
 });
 
-const removeEntryAsync = createAsyncThunk('diary/removeEntry', async (payload: { index: number; id: number }) => {
-  await journalStore.deleteEntryById(payload.id);
-  return payload.index;
+const removeEntryAsync = createAsyncThunk('diary/removeEntry', async (id: number) => {
+  await journalStore.deleteEntryById(id);
+  return id;
 });
 
 const diarySlice = createSlice({
@@ -44,7 +44,11 @@ const diarySlice = createSlice({
         state.diary.push(action.payload);
       })
       .addCase(removeEntryAsync.fulfilled, (state, action) => {
-        state.diary.splice(action.payload, 1);
+        const id = action.payload;
+        const index = state.diary.findIndex(entry => entry.id === id);
+        if (index !== -1) {
+          state.diary.splice(index, 1);
+        }
       });
   },
 });
