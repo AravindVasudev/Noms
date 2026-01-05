@@ -21,7 +21,10 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
 
+  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
   const filteredDiary = useMemo(() => diary.filter((d) => d.date === selectedDate), [diary, selectedDate]);
+  const canGoNext = useMemo(() => selectedDate < todayISO, [selectedDate, todayISO]);
 
   const totals = filteredDiary.reduce(
     (acc, cur) => {
@@ -62,12 +65,17 @@ export default function HomeScreen() {
             <Text style={styles.dateNavText}>◀</Text>
           </TouchableOpacity>
           <Text style={styles.dateLabel}>{new Date(selectedDate).toDateString()}</Text>
-          <TouchableOpacity onPress={() => {
-            const d = new Date(selectedDate);
-            d.setDate(d.getDate() + 1);
-            setSelectedDate(d.toISOString().slice(0,10));
-          }} style={styles.dateNav}>
-            <Text style={styles.dateNavText}>▶</Text>
+          <TouchableOpacity
+            disabled={!canGoNext}
+            onPress={() => {
+              const d = new Date(selectedDate);
+              d.setDate(d.getDate() + 1);
+              const nextISO = d.toISOString().slice(0,10);
+              if (nextISO <= todayISO) setSelectedDate(nextISO);
+            }}
+            style={styles.dateNav}
+          >
+            <Text style={[styles.dateNavText, !canGoNext && styles.dateNavTextDisabled]}>▶</Text>
           </TouchableOpacity>
         </View>
 
@@ -319,5 +327,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#034ea6',
+  },
+  dateNavTextDisabled: {
+    color: '#a0bce8',
   },
 });
