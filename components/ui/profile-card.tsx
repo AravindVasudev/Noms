@@ -1,21 +1,14 @@
+import { setUsernameAsync } from '@/lib/profileSlice';
+import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function ProfileCard() {
-  const [name, setName] = useState('User');
+  const name = useAppSelector(state => state.profile.username);
+  const dispatch = useAppDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState('');
-
-  useEffect(() => {
-    const loadName = async () => {
-      const stored = await AsyncStorage.getItem('username');
-      const displayName = stored || 'User';
-      setName(displayName);
-    };
-    loadName();
-  }, []);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -24,8 +17,7 @@ export default function ProfileCard() {
 
   const handleSave = async () => {
     const newName = tempName.trim() || 'User';
-    setName(newName);
-    await AsyncStorage.setItem('username', newName);
+    dispatch(setUsernameAsync(newName));
     setIsEditing(false);
   };
 
