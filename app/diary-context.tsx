@@ -2,11 +2,11 @@ import React, { createContext, ReactNode, useContext, useState } from 'react';
 
 type Nutrition = {
   name: string;
-  calories: string;
-  fat: string;
-  protein: string;
-  carbs: string;
-  fiber: string;
+  calories: number | null;
+  fat: number | null;
+  protein: number | null;
+  carbs: number | null;
+  fiber: number | null;
 };
 
 type DiaryContextValue = {

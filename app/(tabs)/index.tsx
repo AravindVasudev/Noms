@@ -12,14 +12,6 @@ import { RectButton } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-type Nutrition = {
-  name: string;
-  calories: string;
-  fat: string;
-  protein: string;
-  carbs: string;
-  fiber: string;
-};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -41,12 +33,12 @@ export default function HomeScreen() {
           data={diary}
           keyExtractor={(_, index) => index.toString()}
           renderItem={({ item, index }) => {
-            const name = item.name?.trim() || 'Quick Add';
-            const calories = item.calories?.trim() || '-';
-            const fat = item.fat?.trim() || '-';
-            const carbs = item.carbs?.trim() || '-';
-            const protein = item.protein?.trim() || '-';
-            const fiber = item.fiber?.trim() || '-';
+            const name = (item.name || '').trim() || 'Quick Add';
+            const calories = typeof item.calories === 'number' ? item.calories.toString() : '-';
+            const fat = typeof item.fat === 'number' ? item.fat.toString() : '-';
+            const carbs = typeof item.carbs === 'number' ? item.carbs.toString() : '-';
+            const protein = typeof item.protein === 'number' ? item.protein.toString() : '-';
+            const fiber = typeof item.fiber === 'number' ? item.fiber.toString() : '-';
             return (
               <Swipeable renderRightActions={renderRight(index)}>
                 <View style={styles.todoItem}>

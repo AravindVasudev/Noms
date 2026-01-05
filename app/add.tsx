@@ -23,13 +23,18 @@ export default function AddScreen() {
       Alert.alert('Validation', 'Calories is required');
       return;
     }
-    const caloriesNum = Number(calories);
+    const caloriesNum = parseInt(calories, 10);
     if (!Number.isFinite(caloriesNum) || isNaN(caloriesNum)) {
       Alert.alert('Validation', 'Calories must be a valid number');
       return;
     }
 
-    addEntry({ ...nutrition, name, calories });
+    const fatNum = nutrition.fat.trim() === '' ? null : parseInt(nutrition.fat, 10);
+    const proteinNum = nutrition.protein.trim() === '' ? null : parseInt(nutrition.protein, 10);
+    const carbsNum = nutrition.carbs.trim() === '' ? null : parseInt(nutrition.carbs, 10);
+    const fiberNum = nutrition.fiber.trim() === '' ? null : parseInt(nutrition.fiber, 10);
+
+    addEntry({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum });
     Keyboard.dismiss();
     router.back();
   };
