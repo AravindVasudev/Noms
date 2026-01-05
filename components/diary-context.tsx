@@ -1,5 +1,5 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import db from './db';
+import journalStore from './journal-store';
 
 type Nutrition = {
   id?: number;
@@ -27,8 +27,8 @@ export function DiaryProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        await db.init();
-        const rows = await db.getAllEntries();
+        await journalStore.init();
+        const rows = await journalStore.getAllEntries();
         setDiary(rows);
       } catch (e) {
         console.warn('Failed to initialize diary DB', e);
@@ -37,7 +37,7 @@ export function DiaryProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addEntry = async (entry: Omit<Nutrition, 'id'>) => {
-    const insertId = await db.insertEntry(entry as any);
+    const insertId = await journalStore.insertEntry(entry as any);
     const newEntry: Nutrition = { ...(entry as Nutrition) };
     if (insertId != null) newEntry.id = insertId;
     setDiary((p) => [...p, newEntry]);
@@ -48,7 +48,7 @@ export function DiaryProvider({ children }: { children: ReactNode }) {
     if (!entry) return;
     if (entry.id != null) {
       try {
-        await db.deleteEntryById(entry.id);
+        await journalStore.deleteEntryById(entry.id);
       } catch (e) {
         console.warn('Failed to delete entry from DB', e);
       }
