@@ -3,8 +3,7 @@ import JourneyEntries from '@/components/ui/journey-entries';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-  StyleSheet,
-  View
+  StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Aggregates from '../../components/ui/aggregates';
@@ -37,11 +36,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
         <DatePicker value={selectedDate} onChange={setSelectedDate} />
         <Aggregates totals={totals} onAdd={() => router.push({ pathname: '/add', params: { date: selectedDate } })} />
         <JourneyEntries diary={diary} selectedDate={selectedDate} removeEntry={removeEntry} />
-      </View>
     </SafeAreaView>
   );
 }
@@ -50,9 +47,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  container: {
-    flex: 1,
     padding: 16,
   },
 });

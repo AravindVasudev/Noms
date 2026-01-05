@@ -29,7 +29,7 @@ export default function JourneyEntries({ diary, selectedDate, removeEntry }: Pro
 
   return (
     <>
-    <Text style={styles.journeyTitle}>Journey Entries</Text>
+    <Text style={styles.journeyTitle}>Journal Entries</Text>
     <FlatList
       data={entries}
       keyExtractor={(_, index) => index.toString()}
