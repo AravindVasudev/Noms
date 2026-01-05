@@ -1,5 +1,4 @@
 import { useDiary } from '@/app/diary-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
@@ -7,12 +6,12 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Aggregates from '../../components/ui/aggregates';
 import DatePicker from '../../components/ui/date-picker';
 
 
@@ -60,39 +59,7 @@ export default function HomeScreen() {
       <View style={styles.container}>
         {/* Date picker */}
         <DatePicker value={selectedDate} onChange={setSelectedDate} />
-
-        <LinearGradient
-          colors={['#e9f4ff', '#ffffff']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.aggregatesRowWrap}
-        >
-          <Text style={styles.aggregateTitle}>Aggregate</Text>
-          <View style={styles.aggregatesRow}>
-            <View style={styles.aggregatesText}>
-              <Text style={styles.aggregateLine}>
-                <Text style={styles.aggregateLabel}>Cal: </Text>
-                <Text style={styles.aggregateValue}>{totals.calories} Cal</Text>
-                {'   '}
-                <Text style={styles.aggregateLabel}>P: </Text>
-                <Text style={styles.aggregateValue}>{totals.protein} g</Text>
-              </Text>
-              <Text style={styles.aggregateLine}>
-                <Text style={styles.aggregateLabel}>F: </Text>
-                <Text style={styles.aggregateValue}>{totals.fat} g</Text>
-                {'   '}
-                <Text style={styles.aggregateLabel}>C: </Text>
-                <Text style={styles.aggregateValue}>{totals.carbs} g</Text>
-                {'   '}
-                <Text style={styles.aggregateLabel}>Fi: </Text>
-                <Text style={styles.aggregateValue}>{totals.fiber} g</Text>
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.headerPlus} onPress={() => router.push({ pathname: '/add', params: { date: selectedDate } })}>
-              <Text style={styles.headerPlusText}>+</Text>
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
+        <Aggregates totals={totals} onAdd={() => router.push({ pathname: '/add', params: { date: selectedDate } })} />
         <Text style={styles.journeyTitle}>Journey Entries</Text>
 
         {/* Diary */}
@@ -231,56 +198,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 4,
   },
-  aggregatesRowWrap: {
-    borderWidth: 3,
-    borderColor: '#007AFF',
-    borderRadius: 12,
-    padding: 8,
-    marginBottom: 12,
-    backgroundColor: 'rgba(0,122,255,0.06)',
-    // 3D effect
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    elevation: 6,
-  },
   aggregatesText: {
     flex: 1,
-  },
-  aggregateLine: {
-    fontSize: 14,
-    color: '#222',
-    fontWeight: '600',
-  },
-  aggregateTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#034ea6',
-    marginBottom: 8,
-  },
-  aggregateLabel: {
-    fontWeight: '700',
-    color: '#034ea6',
-  },
-  aggregateValue: {
-    fontWeight: '600',
-    color: '#022a66',
-  },
-  headerPlus: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#007AFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 12,
-  },
-  headerPlusText: {
-    color: '#fff',
-    fontSize: 24,
-    lineHeight: 26,
-    fontWeight: '600',
   },
   journeyTitle: {
     fontSize: 18,
