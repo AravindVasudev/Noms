@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,8 +6,10 @@ import ProfileCard from '../../components/ui/profile-card';
 import SettingsItem from '../../components/ui/settings-item';
 
 export default function Settings() {
+  const router = useRouter();
+
   const handleSetGoals = () => {
-    console.log('Set Goals pressed');
+    router.push('/goals');
   };
 
   const handleClearAppData = () => {
