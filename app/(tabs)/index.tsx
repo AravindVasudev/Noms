@@ -1,21 +1,36 @@
 import { useDiary } from '@/app/diary-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React from "react";
+import React from 'react';
 import {
   FlatList,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 export default function HomeScreen() {
   const router = useRouter();
   const { diary, removeEntry } = useDiary();
+  const insets = useSafeAreaInsets();
+
+  const totals = diary.reduce(
+    (acc, cur) => {
+      acc.calories += typeof cur.calories === 'number' ? cur.calories : 0;
+      acc.protein += typeof cur.protein === 'number' ? cur.protein : 0;
+      acc.fat += typeof cur.fat === 'number' ? cur.fat : 0;
+      acc.carbs += typeof cur.carbs === 'number' ? cur.carbs : 0;
+      acc.fiber += typeof cur.fiber === 'number' ? cur.fiber : 0;
+      return acc;
+    },
+    { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 }
+  );
 
   const renderRight = (index: number) => {
     return () => (
@@ -26,8 +41,43 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaProvider style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        {/* Aggregates + Diary */}
+        <LinearGradient
+          colors={['#e9f4ff', '#ffffff']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.aggregatesRowWrap}
+        >
+          <Text style={styles.aggregateTitle}>Aggregate</Text>
+          <View style={styles.aggregatesRow}>
+            <View style={styles.aggregatesText}>
+              <Text style={styles.aggregateLine}>
+                <Text style={styles.aggregateLabel}>Cal: </Text>
+                <Text style={styles.aggregateValue}>{totals.calories} Cal</Text>
+                {'   '}
+                <Text style={styles.aggregateLabel}>P: </Text>
+                <Text style={styles.aggregateValue}>{totals.protein} g</Text>
+              </Text>
+              <Text style={styles.aggregateLine}>
+                <Text style={styles.aggregateLabel}>F: </Text>
+                <Text style={styles.aggregateValue}>{totals.fat} g</Text>
+                {'   '}
+                <Text style={styles.aggregateLabel}>C: </Text>
+                <Text style={styles.aggregateValue}>{totals.carbs} g</Text>
+                {'   '}
+                <Text style={styles.aggregateLabel}>Fi: </Text>
+                <Text style={styles.aggregateValue}>{totals.fiber} g</Text>
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.headerPlus} onPress={() => router.push('/add')}>
+              <Text style={styles.headerPlusText}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+        <Text style={styles.journeyTitle}>Journey Entries</Text>
+
         {/* Diary */}
         <FlatList
           data={diary}
@@ -52,16 +102,8 @@ export default function HomeScreen() {
             );
           }}
         />
-
-        {/* Floating + Button */}
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => router.push('/add')}
-        >
-          <Text style={styles.fabText}>+</Text>
-        </TouchableOpacity>
       </View>
-    </SafeAreaProvider>
+    </SafeAreaView>
   );
 }
 
@@ -82,19 +124,19 @@ const styles = StyleSheet.create({
 
   /* Floating Action Button */
   fab: {
-    position: "absolute",
+    position: 'absolute',
     right: 20,
     bottom: 30,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#007AFF",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
     elevation: 5,
   },
   fabText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 32,
     lineHeight: 36,
   },
@@ -164,5 +206,70 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontWeight: '700',
+  },
+  aggregatesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  aggregatesRowWrap: {
+    borderWidth: 3,
+    borderColor: '#007AFF',
+    borderRadius: 12,
+    padding: 8,
+    marginBottom: 12,
+    backgroundColor: 'rgba(0,122,255,0.06)',
+    // 3D effect
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  aggregatesText: {
+    flex: 1,
+  },
+  aggregateLine: {
+    fontSize: 14,
+    color: '#222',
+    fontWeight: '600',
+  },
+  aggregateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#034ea6',
+    marginBottom: 8,
+  },
+  aggregateLabel: {
+    fontWeight: '700',
+    color: '#034ea6',
+  },
+  aggregateValue: {
+    fontWeight: '600',
+    color: '#022a66',
+  },
+  headerPlus: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+  },
+  headerPlusText: {
+    color: '#fff',
+    fontSize: 24,
+    lineHeight: 26,
+    fontWeight: '600',
+  },
+  journeyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0a3d9a',
+    marginBottom: 8,
+    marginTop: 6,
   },
 });
