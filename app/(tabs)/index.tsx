@@ -1,4 +1,4 @@
-import JourneyEntries from '@/components/ui/journey-entries';
+import JournalEntries from '@/components/ui/journal-entries';
 import { formatDateKey } from '@/lib/date';
 import { useAppSelector } from '@/lib/store';
 import { useRouter } from 'expo-router';
@@ -43,7 +43,7 @@ export default function Diary() {
             <Text style={styles.emptyText}>No food logged. Click here to add.</Text>
           </Pressable>
         ) : (
-          <JourneyEntries selectedDate={selectedDate} />
+          <JournalEntries selectedDate={selectedDate} />
         )}
     </SafeAreaView>
   );

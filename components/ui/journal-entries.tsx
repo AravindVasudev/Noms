@@ -10,7 +10,7 @@ type Props = {
   selectedDate: Date;
 };
 
-export default function JourneyEntries({ selectedDate }: Props) {
+export default function JournalEntries({ selectedDate }: Props) {
   const diary = useAppSelector(state => state.diary.diary);
   const dispatch = useAppDispatch();
   const entries = useMemo(() => {
@@ -37,7 +37,7 @@ export default function JourneyEntries({ selectedDate }: Props) {
 
   return (
     <>
-      <Text style={styles.journeyTitle}>Journal Entries</Text>
+      <Text style={styles.journalTitle}>Journal Entries</Text>
       <FlatList
         data={entries}
         keyExtractor={(_, index) => index.toString()}
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-  journeyTitle: {
+  journalTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#0a3d9a',
