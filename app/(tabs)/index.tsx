@@ -1,6 +1,7 @@
-import { useDiary } from '@/components/diary-context';
 import JourneyEntries from '@/components/ui/journey-entries';
 import { formatDateKey } from '@/lib/date';
+import { removeEntryAsync } from '@/lib/diarySlice';
+import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
@@ -11,12 +12,20 @@ import DatePicker from '../../components/ui/date-picker';
 
 export default function Diary() {
   const router = useRouter();
-  const { diary, removeEntry } = useDiary();
+  const diary = useAppSelector(state => state.diary.diary);
+  const dispatch = useAppDispatch();
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const filteredDiary = useMemo(() => {
     const selectedKey = formatDateKey(selectedDate);
     return diary.filter((d) => formatDateKey(d.date) === selectedKey);
   }, [diary, selectedDate]);
+
+  const handleRemoveEntry = (index: number) => {
+    const entry = diary[index];
+    if (entry && entry.id != null) {
+      dispatch(removeEntryAsync({ index, id: entry.id }));
+    }
+  };
 
   const totals = filteredDiary.reduce(
     (acc, cur) => {
@@ -43,7 +52,7 @@ export default function Diary() {
             <Text style={styles.emptyText}>No food logged. Click here to add.</Text>
           </Pressable>
         ) : (
-          <JourneyEntries diary={diary} selectedDate={selectedDate} removeEntry={removeEntry} />
+          <JourneyEntries diary={diary} selectedDate={selectedDate} removeEntry={handleRemoveEntry} />
         )}
     </SafeAreaView>
   );

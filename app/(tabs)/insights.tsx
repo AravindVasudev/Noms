@@ -3,9 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Nutrition, useDiary } from '../../components/diary-context';
 import DurationPicker from '../../components/ui/duration-picker';
 import LineChartCard from '../../components/ui/line-chart-card';
+import { Nutrition } from '../../lib/diarySlice';
+import { useAppSelector } from '../../lib/store';
 
 export default function Insights() {
   const [labels, setLabels] = useState<string[]>([]);
@@ -17,7 +18,7 @@ export default function Insights() {
   const [loading, setLoading] = useState(true);
   const [duration, setDuration] = useState<number>(7);
   const [goals, setGoals] = useState({ calories: 0, protein: 0, fiber: 0, fat: 0, carbs: 0 });
-  const { diary } = useDiary();
+  const diary = useAppSelector(state => state.diary.diary);
 
   const durationOptions = useMemo(
     () =>

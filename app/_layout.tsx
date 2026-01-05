@@ -5,16 +5,40 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
+import { Provider } from 'react-redux';
 
-import { DiaryProvider } from '@/components/diary-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { initializeDiary } from '@/lib/diarySlice';
+import store, { useAppDispatch } from '@/lib/store';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function RootLayout() {
+function AppContent() {
   const colorScheme = useColorScheme();
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(initializeDiary());
+  }, [dispatch]);
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="signup" options={{ headerShown: false }} />
+          <Stack.Screen name="add" options={{ headerShown: false }} />
+          <Stack.Screen name="goals" options={{ headerShown: false }} />
+        </Stack>
+        <StatusBar style="auto" />
+      </GestureHandlerRootView>
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
   const router = useRouter();
   const [signedUp, setSignedUp] = useState<boolean | null>(null);
 
@@ -32,19 +56,13 @@ export default function RootLayout() {
     }
   }, [signedUp, router]);
 
+  if (signedUp === null) {
+    return null; // or loading
+  }
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <DiaryProvider>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="signup" options={{ headerShown: false }} />
-            <Stack.Screen name="add" options={{ headerShown: false }} />
-            <Stack.Screen name="goals" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style="auto" />
-        </DiaryProvider>
-      </GestureHandlerRootView>
-    </ThemeProvider>
+    <Provider store={store}>
+      <AppContent />
+    </Provider>
   );
 }

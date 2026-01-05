@@ -3,14 +3,15 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useDiary } from '../../components/diary-context';
 import journalStore from '../../components/journal-store';
 import ProfileCard from '../../components/ui/profile-card';
 import SettingsItem from '../../components/ui/settings-item';
+import { clearAll } from '../../lib/diarySlice';
+import { useAppDispatch } from '../../lib/store';
 
 export default function Settings() {
   const router = useRouter();
-  const { clearAll } = useDiary();
+  const dispatch = useAppDispatch();
 
   const handleSetGoals = () => {
     router.push('/goals');
@@ -19,7 +20,7 @@ export default function Settings() {
   const handleClearAppData = async () => {
     await journalStore.dropTable();
     await journalStore.init();
-    clearAll();
+    dispatch(clearAll());
     await AsyncStorage.multiRemove(['goal-calories', 'goal-protein', 'goal-fiber', 'goal-fat', 'goal-carbs', 'username', 'signedUp']);
     Alert.alert('Data Cleared', 'All app data has been cleared.');
     router.replace('/signup');

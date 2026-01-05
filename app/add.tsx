@@ -1,4 +1,5 @@
-import { useDiary } from '@/components/diary-context';
+import { addEntryAsync } from '@/lib/diarySlice';
+import { useAppDispatch } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
@@ -6,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddScreen() {
   const router = useRouter();
-  const { addEntry } = useDiary();
+  const dispatch = useAppDispatch();
 
   const { date: paramDate } = useLocalSearchParams();
   const today = new Date();
@@ -40,7 +41,7 @@ export default function AddScreen() {
     const carbsNum = nutrition.carbs.trim() === '' ? null : parseInt(nutrition.carbs, 10);
     const fiberNum = nutrition.fiber.trim() === '' ? null : parseInt(nutrition.fiber, 10);
 
-    addEntry({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum, date: nutrition.date });
+    dispatch(addEntryAsync({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum, date: nutrition.date }));
     Keyboard.dismiss();
     router.back();
   };
