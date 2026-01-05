@@ -1,6 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
 export default function GoalsScreen() {
   const router = useRouter();
@@ -15,9 +16,28 @@ export default function GoalsScreen() {
     carbs: '',
   });
 
-  const onSetGoals = () => {
-    console.log('Goals set:', goals);
+  const onSetGoals = async () => {
+    if (goals.calories.trim()) await AsyncStorage.setItem('goal-calories', goals.calories);
+    if (goals.protein.trim()) await AsyncStorage.setItem('goal-protein', goals.protein);
+    if (goals.fiber.trim()) await AsyncStorage.setItem('goal-fiber', goals.fiber);
+    if (goals.fat.trim()) await AsyncStorage.setItem('goal-fat', goals.fat);
+    if (goals.carbs.trim()) await AsyncStorage.setItem('goal-carbs', goals.carbs);
+    Alert.alert('Success', 'Goals set successfully!', [
+      { text: 'OK', onPress: () => router.back() }
+    ]);
   };
+
+  useEffect(() => {
+    const loadGoals = async () => {
+      const calories = await AsyncStorage.getItem('goal-calories') || '';
+      const protein = await AsyncStorage.getItem('goal-protein') || '';
+      const fiber = await AsyncStorage.getItem('goal-fiber') || '';
+      const fat = await AsyncStorage.getItem('goal-fat') || '';
+      const carbs = await AsyncStorage.getItem('goal-carbs') || '';
+      setGoals({ calories, protein, fiber, fat, carbs });
+    };
+    loadGoals();
+  }, []);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
