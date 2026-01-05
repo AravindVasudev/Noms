@@ -3,11 +3,13 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 export type Profile = {
   username: string;
+  displayPicture: string | null;
 };
 
 const initializeProfile = createAsyncThunk('profile/initialize', async () => {
   const username = await AsyncStorage.getItem('username') || 'User';
-  return { username };
+  const displayPicture = await AsyncStorage.getItem('displayPicture');
+  return { username, displayPicture };
 });
 
 const setUsernameAsync = createAsyncThunk('profile/setUsername', async (username: string) => {
@@ -15,9 +17,18 @@ const setUsernameAsync = createAsyncThunk('profile/setUsername', async (username
   return username;
 });
 
+const setDisplayPictureAsync = createAsyncThunk('profile/setDisplayPicture', async (base64Image: string | null) => {
+  if (base64Image) {
+    await AsyncStorage.setItem('displayPicture', base64Image);
+  } else {
+    await AsyncStorage.removeItem('displayPicture');
+  }
+  return base64Image;
+});
+
 const profileSlice = createSlice({
   name: 'profile',
-  initialState: { username: 'User' } as Profile,
+  initialState: { username: 'User', displayPicture: null } as Profile,
   reducers: {},
   extraReducers: (builder) => {
     builder
@@ -26,9 +37,12 @@ const profileSlice = createSlice({
       })
       .addCase(setUsernameAsync.fulfilled, (state, action) => {
         state.username = action.payload;
+      })
+      .addCase(setDisplayPictureAsync.fulfilled, (state, action) => {
+        state.displayPicture = action.payload;
       });
   },
 });
 
-export { initializeProfile, setUsernameAsync };
+export { initializeProfile, setDisplayPictureAsync, setUsernameAsync };
 export default profileSlice.reducer;

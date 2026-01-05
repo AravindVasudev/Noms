@@ -1,14 +1,36 @@
-import { setUsernameAsync } from '@/lib/profileSlice';
+import { setDisplayPictureAsync, setUsernameAsync } from '@/lib/profileSlice';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function ProfileCard() {
   const name = useAppSelector(state => state.profile.username);
+  const displayPicture = useAppSelector(state => state.profile.displayPicture);
   const dispatch = useAppDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState('');
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to change your profile picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      dispatch(setDisplayPictureAsync(`data:image/jpeg;base64,${result.assets[0].base64}`));
+    }
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -23,12 +45,14 @@ export default function ProfileCard() {
 
   return (
     <View style={styles.profileCard}>
-      <View style={styles.avatarContainer}>
-        <Image
-          source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=120&background=2296f3&color=fff` }}
-          style={styles.avatar}
-        />
-      </View>
+      <Pressable onPress={pickImage}>
+        <View style={styles.avatarContainer}>
+          <Image
+            source={{ uri: displayPicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=120&background=2296f3&color=fff` }}
+            style={styles.avatar}
+          />
+        </View>
+      </Pressable>
       {isEditing ? (
         <View style={styles.nameEditContainer}>
           <TextInput
