@@ -51,7 +51,7 @@ export default function Aggregates({ totals, onAdd }: Props) {
     if (type === 'calories' || type === 'fat' || type === 'carbs') {
       return value > goalNum ? styles.red : null;
     } else if (type === 'protein' || type === 'fiber') {
-      return styles.green;
+      return value > goalNum ? styles.green : null;
     }
     return null;
   };
