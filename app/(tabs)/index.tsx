@@ -8,8 +8,6 @@ import {
   Text,
   View
 } from 'react-native';
-import { RectButton } from 'react-native-gesture-handler';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Aggregates from '../../components/ui/aggregates';
 import DatePicker from '../../components/ui/date-picker';
 
@@ -17,7 +15,6 @@ import DatePicker from '../../components/ui/date-picker';
 export default function HomeScreen() {
   const router = useRouter();
   const { diary, removeEntry } = useDiary();
-  const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState(() => {
     const d = new Date();
     const y = d.getFullYear();
@@ -38,20 +35,6 @@ export default function HomeScreen() {
     },
     { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 }
   );
-
-  const renderRight = (item: any) => {
-    return () => (
-      <RectButton
-        style={styles.rightAction}
-        onPress={() => {
-          const idx = diary.findIndex((d) => d === item);
-          if (idx !== -1) removeEntry(idx);
-        }}
-      >
-        <Text style={styles.actionText}>✕</Text>
-      </RectButton>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
