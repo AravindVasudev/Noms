@@ -1,8 +1,7 @@
 import { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel } from '@/lib/date';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Nutrition, useDiary } from '../../components/diary-context';
 
@@ -10,35 +9,23 @@ export default function Insights() {
   const [labels, setLabels] = useState<string[]>([]);
   const [dataPoints, setDataPoints] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
-  const [duration, setDuration] = useState<number>(3);
-  const [durationOpen, setDurationOpen] = useState(false);
-  const [durationItems, setDurationItems] = useState(
-    [
-      { label: '3 days', value: 3 },
-      { label: '7 days', value: 7 },
-      { label: 'Fortnight', value: 14 },
-      { label: '1 month', value: 30 },
-    ] satisfies { label: string; value: number }[],
-  );
+  const [duration, setDuration] = useState<number>(7);
   const { diary } = useDiary();
 
-  const selectedDurationLabel = useMemo(
-    () => durationItems.find((item) => item.value === duration)?.label ?? '3 days',
-    [duration, durationItems],
+  const durationOptions = useMemo(
+    () =>
+      [
+        { label: 'Week', value: 7 },
+        { label: 'Fortnight', value: 14 },
+        { label: 'Month', value: 30 },
+      ] satisfies { label: string; value: number }[],
+    [],
   );
 
-  const handleDurationChange = (
-    val: number | null | ((prev: number | null) => number | null),
-  ) => {
-    if (typeof val === 'function') {
-      setDuration((prev) => {
-        const next = (val as (prev: number | null) => number | null)(prev);
-        return next ?? prev;
-      });
-    } else if (val != null) {
-      setDuration(val);
-    }
-  };
+  const selectedDurationLabel = useMemo(
+    () => durationOptions.find((item) => item.value === duration)?.label ?? 'Week',
+    [duration, durationOptions],
+  );
 
   useEffect(() => {
     const dayKeys = getLastNDaysKeys(duration);
@@ -72,18 +59,22 @@ export default function Insights() {
     <SafeAreaView style={styles.container}>
       <View style={styles.controls}>
         <Text style={styles.durationLabel}>Duration:</Text>
-        <DropDownPicker
-          open={durationOpen}
-          value={duration}
-          items={durationItems}
-          setOpen={setDurationOpen}
-          setItems={setDurationItems}
-          setValue={handleDurationChange}
-          style={styles.dropdown}
-          dropDownContainerStyle={styles.dropdownMenu}
-          containerStyle={styles.dropdownContainer}
-          listMode="SCROLLVIEW"
-        />
+        <View style={styles.navbar}>
+          {durationOptions.map((opt) => {
+            const selected = opt.value === duration;
+            return (
+              <Pressable
+                key={opt.value}
+                onPress={() => setDuration(opt.value)}
+                style={[styles.navItem, selected && styles.navItemSelected]}
+              >
+                <Text style={[styles.navText, selected && styles.navTextSelected]}>
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
       <Text style={styles.title}>Last {selectedDurationLabel} — Calories</Text>
       <View style={styles.chartWrapper}>
@@ -118,13 +109,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    justifyContent: 'center',
     marginBottom: 12,
     zIndex: 10,
   },
   durationLabel: { fontSize: 14, fontWeight: '500' },
-  dropdownContainer: { width: 160, zIndex: 20 },
-  dropdown: { minHeight: 36 },
-  dropdownMenu: { zIndex: 30 },
+  navbar: {
+    flexDirection: 'row',
+    backgroundColor: '#f2f4f7',
+    borderRadius: 999,
+    padding: 4,
+    gap: 4,
+  },
+  navItem: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+  },
+  navItemSelected: {
+    backgroundColor: '#2296f3',
+  },
+  navText: { fontSize: 14, fontWeight: '500', color: '#344054' },
+  navTextSelected: { color: '#ffffff' },
   title: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
   chartWrapper: { backgroundColor: '#fff', padding: 8, borderRadius: 8 },
 });
