@@ -18,7 +18,7 @@ export function getLastNDaysKeys(n: number, endDate?: Date) {
 }
 
 export function keyToWeekdayLabel(key: string, locale?: string) {
-  const d = new Date(key);
+  const d = parseDateKey(key);
   return d.toLocaleDateString(locale, { weekday: 'short' });
 }
 
