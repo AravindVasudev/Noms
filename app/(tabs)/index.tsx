@@ -1,7 +1,7 @@
 import { useDiary } from '@/app/diary-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   FlatList,
   SafeAreaView,
@@ -19,8 +19,11 @@ export default function HomeScreen() {
   const router = useRouter();
   const { diary, removeEntry } = useDiary();
   const insets = useSafeAreaInsets();
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
 
-  const totals = diary.reduce(
+  const filteredDiary = useMemo(() => diary.filter((d) => d.date === selectedDate), [diary, selectedDate]);
+
+  const totals = filteredDiary.reduce(
     (acc, cur) => {
       acc.calories += typeof cur.calories === 'number' ? cur.calories : 0;
       acc.protein += typeof cur.protein === 'number' ? cur.protein : 0;
@@ -32,9 +35,15 @@ export default function HomeScreen() {
     { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 }
   );
 
-  const renderRight = (index: number) => {
+  const renderRight = (item: any) => {
     return () => (
-      <RectButton style={styles.rightAction} onPress={() => removeEntry(index)}>
+      <RectButton
+        style={styles.rightAction}
+        onPress={() => {
+          const idx = diary.findIndex((d) => d === item);
+          if (idx !== -1) removeEntry(idx);
+        }}
+      >
         <Text style={styles.actionText}>✕</Text>
       </RectButton>
     );
@@ -43,7 +52,27 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        {/* Date picker */}
+        <View style={styles.dateRow}>
+          <TouchableOpacity onPress={() => {
+            const d = new Date(selectedDate);
+            d.setDate(d.getDate() - 1);
+            setSelectedDate(d.toISOString().slice(0,10));
+          }} style={styles.dateNav}>
+            <Text style={styles.dateNavText}>◀</Text>
+          </TouchableOpacity>
+          <Text style={styles.dateLabel}>{new Date(selectedDate).toDateString()}</Text>
+          <TouchableOpacity onPress={() => {
+            const d = new Date(selectedDate);
+            d.setDate(d.getDate() + 1);
+            setSelectedDate(d.toISOString().slice(0,10));
+          }} style={styles.dateNav}>
+            <Text style={styles.dateNavText}>▶</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Aggregates + Diary */}
+
         <LinearGradient
           colors={['#e9f4ff', '#ffffff']}
           start={{ x: 0, y: 0 }}
@@ -71,7 +100,7 @@ export default function HomeScreen() {
                 <Text style={styles.aggregateValue}>{totals.fiber} g</Text>
               </Text>
             </View>
-            <TouchableOpacity style={styles.headerPlus} onPress={() => router.push('/add')}>
+            <TouchableOpacity style={styles.headerPlus} onPress={() => router.push({ pathname: '/add', params: { date: selectedDate } })}>
               <Text style={styles.headerPlusText}>+</Text>
             </TouchableOpacity>
           </View>
@@ -80,7 +109,7 @@ export default function HomeScreen() {
 
         {/* Diary */}
         <FlatList
-          data={diary}
+          data={filteredDiary}
           keyExtractor={(_, index) => index.toString()}
           renderItem={({ item, index }) => {
             const name = (item.name || '').trim() || 'Quick Add';
@@ -90,7 +119,7 @@ export default function HomeScreen() {
             const protein = typeof item.protein === 'number' ? item.protein.toString() : '-';
             const fiber = typeof item.fiber === 'number' ? item.fiber.toString() : '-';
             return (
-              <Swipeable renderRightActions={renderRight(index)}>
+              <Swipeable renderRightActions={renderRight(item)}>
                 <View style={styles.todoItem}>
                   <Text style={styles.diaryName}>{name}</Text>
                   <Text style={styles.diaryCalories}>{calories} Cal</Text>
@@ -271,5 +300,24 @@ const styles = StyleSheet.create({
     color: '#0a3d9a',
     marginBottom: 8,
     marginTop: 6,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  dateNav: {
+    padding: 8,
+    marginHorizontal: 12,
+  },
+  dateNavText: {
+    fontSize: 18,
+    color: '#007AFF',
+  },
+  dateLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#034ea6',
   },
 });

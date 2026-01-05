@@ -1,5 +1,5 @@
 import { useDiary } from '@/app/diary-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 
@@ -7,6 +7,8 @@ export default function AddScreen() {
   const router = useRouter();
   const { addEntry } = useDiary();
 
+  const { date: paramDate } = useLocalSearchParams();
+  const todayISO = new Date().toISOString().slice(0, 10);
   const [nutrition, setNutrition] = useState({
     name: '',
     calories: '',
@@ -14,6 +16,7 @@ export default function AddScreen() {
     protein: '',
     carbs: '',
     fiber: '',
+    date: (paramDate as string) || todayISO,
   });
 
   const onAdd = () => {
@@ -34,7 +37,7 @@ export default function AddScreen() {
     const carbsNum = nutrition.carbs.trim() === '' ? null : parseInt(nutrition.carbs, 10);
     const fiberNum = nutrition.fiber.trim() === '' ? null : parseInt(nutrition.fiber, 10);
 
-    addEntry({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum });
+    addEntry({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum, date: nutrition.date });
     Keyboard.dismiss();
     router.back();
   };
@@ -45,6 +48,7 @@ export default function AddScreen() {
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.container}>
             <Text style={styles.title}>Add Entry</Text>
+            <Text>aaa {paramDate}</Text>
 
             <Text style={styles.label}>Name</Text>
             <TextInput style={styles.input} value={nutrition.name} onChangeText={(v) => setNutrition((p) => ({ ...p, name: v }))} />

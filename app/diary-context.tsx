@@ -7,6 +7,7 @@ type Nutrition = {
   protein: number | null;
   carbs: number | null;
   fiber: number | null;
+  date: string; // ISO YYYY-MM-DD
 };
 
 type DiaryContextValue = {
