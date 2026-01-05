@@ -6,22 +6,33 @@ interface LineChartCardProps {
   title: string;
   labels: string[];
   dataPoints: number[];
+  goal?: number;
+  yAxisSuffix?: string;
   width?: number;
   height?: number;
 }
 
-export function LineChartCard({ title, labels, dataPoints, width, height = 220 }: LineChartCardProps) {
+export function LineChartCard({ title, labels, dataPoints, goal, yAxisSuffix = '', width, height = 220 }: LineChartCardProps) {
   const chartWidth = width ?? Dimensions.get('window').width - 32;
+
+  const datasets = [{ data: dataPoints }];
+  if (goal !== undefined) {
+    datasets.push({
+      data: Array(labels.length).fill(goal),
+      color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
+      strokeDasharray: [5, 5],
+    } as any);
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.chartWrapper}>
         <LineChart
-          data={{ labels: labels, datasets: [{ data: dataPoints }] }}
+          data={{ labels: labels, datasets: datasets }}
           width={chartWidth}
           height={height}
-          yAxisSuffix=" kcal"
+          yAxisSuffix={yAxisSuffix}
           yAxisInterval={1}
           chartConfig={{
             backgroundColor: '#ffffff',

@@ -1,4 +1,5 @@
 import { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel } from '@/lib/date';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ export default function Insights() {
   const [carbsData, setCarbsData] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [duration, setDuration] = useState<number>(7);
+  const [goals, setGoals] = useState({ calories: 0, protein: 0, fiber: 0, fat: 0, carbs: 0 });
   const { diary } = useDiary();
 
   const durationOptions = useMemo(
@@ -31,6 +33,18 @@ export default function Insights() {
     () => durationOptions.find((item) => item.value === duration)?.label ?? 'Week',
     [duration, durationOptions],
   );
+
+  useEffect(() => {
+    const loadGoals = async () => {
+      const calories = parseFloat(await AsyncStorage.getItem('goal-calories') || '0');
+      const protein = parseFloat(await AsyncStorage.getItem('goal-protein') || '0');
+      const fiber = parseFloat(await AsyncStorage.getItem('goal-fiber') || '0');
+      const fat = parseFloat(await AsyncStorage.getItem('goal-fat') || '0');
+      const carbs = parseFloat(await AsyncStorage.getItem('goal-carbs') || '0');
+      setGoals({ calories, protein, fiber, fat, carbs });
+    };
+    loadGoals();
+  }, []);
 
   useEffect(() => {
     const dayKeys = getLastNDaysKeys(duration);
@@ -86,30 +100,40 @@ export default function Insights() {
           title={`Last ${selectedDurationLabel} — Calories`}
           labels={labels}
           dataPoints={caloriesData}
+          goal={goals.calories > 0 ? goals.calories : undefined}
+          yAxisSuffix=" kcal"
           width={screenWidth}
         />
         <LineChartCard
           title={`Last ${selectedDurationLabel} — Protein`}
           labels={labels}
           dataPoints={proteinData}
+          goal={goals.protein > 0 ? goals.protein : undefined}
+          yAxisSuffix=" g"
           width={screenWidth}
         />
         <LineChartCard
           title={`Last ${selectedDurationLabel} — Fiber`}
           labels={labels}
           dataPoints={fiberData}
+          goal={goals.fiber > 0 ? goals.fiber : undefined}
+          yAxisSuffix=" g"
           width={screenWidth}
         />
         <LineChartCard
           title={`Last ${selectedDurationLabel} — Fats`}
           labels={labels}
           dataPoints={fatsData}
+          goal={goals.fat > 0 ? goals.fat : undefined}
+          yAxisSuffix=" g"
           width={screenWidth}
         />
         <LineChartCard
           title={`Last ${selectedDurationLabel} — Carbs`}
           labels={labels}
           dataPoints={carbsData}
+          goal={goals.carbs > 0 ? goals.carbs : undefined}
+          yAxisSuffix=" g"
           width={screenWidth}
         />
       </ScrollView>
