@@ -12,5 +12,7 @@ A light-weight open-sourced calorie tracker.
 Noms is a simple food journal with daily aggregates and long-term visual insights using graphs that helps you track your food consumption. Everything is stored locally. 
 
 # Screenshots
-![Diary Screenshot](./screen_1.png)
-![Insights Screenshot](./screen_2.png)
+
+| Diary | Insights |
+|:---:|:---:|
+| <img src="./screen_1.png" alt="Diary Screenshot" width="50%"> | <img src="./screen_2.png" alt="Diary Screenshot" width="50%"> |
