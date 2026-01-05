@@ -1,7 +1,7 @@
 import { useDiary } from '@/components/diary-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
 export default function AddScreen() {
   const router = useRouter();
@@ -9,6 +9,8 @@ export default function AddScreen() {
 
   const { date: paramDate } = useLocalSearchParams();
   const today = new Date();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [nutrition, setNutrition] = useState({
     name: '',
     calories: '',
@@ -42,6 +44,28 @@ export default function AddScreen() {
     router.back();
   };
 
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const onShow = (e: any) => {
+      setKeyboardVisible(true);
+      setKeyboardHeight(e?.endCoordinates?.height || 0);
+    };
+
+    const onHide = () => {
+      setKeyboardVisible(false);
+      setKeyboardHeight(0);
+    };
+
+    const showSub = Keyboard.addListener(showEvent, onShow);
+    const hideSub = Keyboard.addListener(hideEvent, onHide);
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
@@ -72,16 +96,37 @@ export default function AddScreen() {
             </View>
           </View>
         </ScrollView>
+        {keyboardVisible && (
+          <View style={[styles.keyboardAccessory, { bottom: keyboardHeight }]}>
+            <TouchableOpacity onPress={() => Keyboard.dismiss()} style={styles.doneButton}>
+              <Text style={styles.doneText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: { flexGrow: 1, justifyContent: 'center' },
+  scrollContainer: { flexGrow: 1, justifyContent: 'center', paddingBottom: 100 },
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: '#034ea6' },
   label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6, color: '#034ea6' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 8 },
   buttons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
+  keyboardAccessory: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 44,
+    backgroundColor: '#f1f1f1',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: '#ccc',
+  },
+  doneButton: { paddingHorizontal: 12, paddingVertical: 6 },
+  doneText: { color: '#007AFF', fontWeight: '600', fontSize: 16 },
 });
