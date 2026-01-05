@@ -1,10 +1,10 @@
 import { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel } from '@/lib/date';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { ActivityIndicator, Dimensions, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Nutrition, useDiary } from '../../components/diary-context';
 import DurationPicker from '../../components/ui/duration-picker';
+import LineChartCard from '../../components/ui/line-chart-card';
 
 export default function Insights() {
   const [labels, setLabels] = useState<string[]>([]);
@@ -65,35 +65,16 @@ export default function Insights() {
         onChange={setDuration}
         style={{ marginBottom: 12, zIndex: 10 }}
       />
-      <Text style={styles.title}>Last {selectedDurationLabel} — Calories</Text>
-      <View style={styles.chartWrapper}>
-        <LineChart
-          data={{ labels: labels, datasets: [{ data: dataPoints }] }}
-          width={screenWidth}
-          height={220}
-          yAxisSuffix=" kcal"
-          yAxisInterval={1}
-          chartConfig={{
-            backgroundColor: '#ffffff',
-            backgroundGradientFrom: '#ffffff',
-            backgroundGradientTo: '#ffffff',
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(34, 150, 243, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
-            style: { borderRadius: 8 },
-            propsForDots: { r: '4', strokeWidth: '2', stroke: '#22a6f3' },
-          }}
-          bezier
-          style={{ borderRadius: 8 }}
-          fromZero
-        />
-      </View>
+      <LineChartCard
+        title={`Last ${selectedDurationLabel} — Calories`}
+        labels={labels}
+        dataPoints={dataPoints}
+        width={screenWidth}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  title: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  chartWrapper: { backgroundColor: '#fff', padding: 8, borderRadius: 8 },
 });
