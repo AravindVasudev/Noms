@@ -38,8 +38,7 @@ class DB {
 
   async getAllEntries(): Promise<NutritionRow[]> {
     const db = await this.getDb();
-    const res: any = await db.getAllAsync('SELECT * FROM nutrition ORDER BY id ASC');
-    const rows: any[] = (res && res.rows && res.rows._array) || [];
+    const rows: any[] = await db.getAllAsync('SELECT * FROM nutrition ORDER BY id ASC');
     return rows.map((r) => ({
       id: r.id,
       name: r.name,
