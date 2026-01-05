@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
-
+import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabTwoScreen() {
   return (
-    <View><Text style={styles.text}>Hello World!!!</Text></View>
+    <SafeAreaView></SafeAreaView>
   );
 }
 
