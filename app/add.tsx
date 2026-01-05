@@ -8,7 +8,7 @@ export default function AddScreen() {
   const { addEntry } = useDiary();
 
   const { date: paramDate } = useLocalSearchParams();
-  const todayISO = new Date().toISOString().slice(0, 10);
+  const today = new Date();
   const [nutrition, setNutrition] = useState({
     name: '',
     calories: '',
@@ -16,7 +16,7 @@ export default function AddScreen() {
     protein: '',
     carbs: '',
     fiber: '',
-    date: (paramDate as string) || todayISO,
+    date: paramDate ? new Date(paramDate as string) : today,
   });
 
   const onAdd = () => {

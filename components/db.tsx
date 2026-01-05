@@ -8,7 +8,7 @@ type NutritionRow = {
   protein: number | null;
   carbs: number | null;
   fiber: number | null;
-  date: string;
+  date: Date;
 };
 
 class DB {
@@ -48,7 +48,7 @@ class DB {
       protein: r.protein == null ? null : Number(r.protein),
       carbs: r.carbs == null ? null : Number(r.carbs),
       fiber: r.fiber == null ? null : Number(r.fiber),
-      date: r.date,
+      date: new Date(r.date),
     }));
   }
 
@@ -60,7 +60,7 @@ class DB {
       entry.protein,
       entry.carbs,
       entry.fiber,
-      entry.date,
+      entry.date.toISOString(),
     ];
     const db = await this.getDb();
     const res: any = await db.runAsync(

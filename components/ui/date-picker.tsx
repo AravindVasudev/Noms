@@ -1,52 +1,42 @@
+import { formatDateKey } from '@/lib/date';
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Props = {
-  value: string; // ISO YYYY-MM-DD
-  onChange: (v: string) => void;
+  value: Date;
+  onChange: (v: Date) => void;
 };
 
 export default function DatePicker({ value, onChange }: Props) {
-  // Parse an ISO YYYY-MM-DD into a local Date at midnight
-  const isoToLocalDate = (iso: string) => {
-    const [y, m, d] = iso.split('-').map((s) => parseInt(s, 10));
-    return new Date(y, m - 1, d);
-  };
+  const today = useMemo(() => new Date(), []);
+  const todayKey = useMemo(() => formatDateKey(today), [today]);
+  const valueKey = useMemo(() => formatDateKey(value), [value]);
+  const canGoNext = useMemo(() => valueKey < todayKey, [valueKey, todayKey]);
 
-  // Format a local Date into ISO YYYY-MM-DD
-  const localDateToISO = (dt: Date) => {
-    const y = dt.getFullYear();
-    const m = (dt.getMonth() + 1).toString().padStart(2, '0');
-    const d = dt.getDate().toString().padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
-
-  const todayISO = useMemo(() => localDateToISO(new Date()), []);
-  const canGoNext = useMemo(() => value < todayISO, [value, todayISO]);
-
-  const yesterdayISO = useMemo(() => {
-    const d = isoToLocalDate(todayISO);
+  const yesterday = useMemo(() => {
+    const d = new Date(today);
     d.setDate(d.getDate() - 1);
-    return localDateToISO(d);
-  }, [todayISO]);
+    return d;
+  }, [today]);
+  const yesterdayKey = useMemo(() => formatDateKey(yesterday), [yesterday]);
 
   const labelText = useMemo(() => {
-    if (value === todayISO) return 'Today';
-    if (value === yesterdayISO) return 'Yesterday';
-    return isoToLocalDate(value).toDateString();
-  }, [value, todayISO, yesterdayISO]);
+    if (valueKey === todayKey) return 'Today';
+    if (valueKey === yesterdayKey) return 'Yesterday';
+    return value.toDateString();
+  }, [valueKey, todayKey, yesterdayKey, value]);
 
   const goPrev = () => {
-    const d = isoToLocalDate(value);
+    const d = new Date(value);
     d.setDate(d.getDate() - 1);
-    onChange(localDateToISO(d));
+    onChange(d);
   };
 
   const goNext = () => {
-    const d = isoToLocalDate(value);
+    const d = new Date(value);
     d.setDate(d.getDate() + 1);
-    const nextISO = localDateToISO(d);
-    if (nextISO <= todayISO) onChange(nextISO);
+    const nextKey = formatDateKey(d);
+    if (nextKey <= todayKey) onChange(d);
   };
 
   return (

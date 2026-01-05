@@ -1,4 +1,5 @@
 import { Nutrition } from '@/components/diary-context';
+import { formatDateKey } from '@/lib/date';
 import React, { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
@@ -6,12 +7,15 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 type Props = {
   diary: Nutrition[];
-  selectedDate: string;
+  selectedDate: Date;
   removeEntry: (index: number) => void;
 };
 
 export default function JourneyEntries({ diary, selectedDate, removeEntry }: Props) {
-  const entries = useMemo(() => diary.filter((d) => d.date === selectedDate), [diary, selectedDate]);
+  const entries = useMemo(() => {
+    const selectedKey = formatDateKey(selectedDate);
+    return diary.filter((d) => formatDateKey(d.date) === selectedKey);
+  }, [diary, selectedDate]);
 
   const renderRight = (item: Nutrition) => {
     return () => (

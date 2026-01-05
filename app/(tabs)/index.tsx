@@ -1,5 +1,6 @@
 import { useDiary } from '@/components/diary-context';
 import JourneyEntries from '@/components/ui/journey-entries';
+import { formatDateKey } from '@/lib/date';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
@@ -11,14 +12,11 @@ import DatePicker from '../../components/ui/date-picker';
 export default function Diary() {
   const router = useRouter();
   const { diary, removeEntry } = useDiary();
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  });
-  const filteredDiary = useMemo(() => diary.filter((d) => d.date === selectedDate), [diary, selectedDate]);
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const filteredDiary = useMemo(() => {
+    const selectedKey = formatDateKey(selectedDate);
+    return diary.filter((d) => formatDateKey(d.date) === selectedKey);
+  }, [diary, selectedDate]);
 
   const totals = filteredDiary.reduce(
     (acc, cur) => {
@@ -35,11 +33,11 @@ export default function Diary() {
   return (
     <SafeAreaView style={styles.safeArea}>
         <DatePicker value={selectedDate} onChange={setSelectedDate} />
-        <Aggregates totals={totals} onAdd={() => router.push({ pathname: '/add', params: { date: selectedDate } })} />
+        <Aggregates totals={totals} onAdd={() => router.push({ pathname: '/add', params: { date: selectedDate.toISOString() } })} />
         {filteredDiary.length === 0 ? (
           <Pressable
             style={styles.emptyContainer}
-            onPress={() => router.push({ pathname: '/add', params: { date: selectedDate } })}
+            onPress={() => router.push({ pathname: '/add', params: { date: selectedDate.toISOString() } })}
             accessibilityRole="button"
           >
             <Text style={styles.emptyText}>No food logged. Click here to add.</Text>
