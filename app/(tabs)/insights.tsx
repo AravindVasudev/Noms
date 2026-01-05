@@ -1,9 +1,10 @@
 import { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel } from '@/lib/date';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Nutrition, useDiary } from '../../components/diary-context';
+import DurationPicker from '../../components/ui/duration-picker';
 
 export default function Insights() {
   const [labels, setLabels] = useState<string[]>([]);
@@ -57,25 +58,13 @@ export default function Insights() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.controls}>
-        <Text style={styles.durationLabel}>Duration:</Text>
-        <View style={styles.navbar}>
-          {durationOptions.map((opt) => {
-            const selected = opt.value === duration;
-            return (
-              <Pressable
-                key={opt.value}
-                onPress={() => setDuration(opt.value)}
-                style={[styles.navItem, selected && styles.navItemSelected]}
-              >
-                <Text style={[styles.navText, selected && styles.navTextSelected]}>
-                  {opt.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
+      <DurationPicker
+        label="Duration:"
+        value={duration}
+        options={durationOptions}
+        onChange={setDuration}
+        style={{ marginBottom: 12, zIndex: 10 }}
+      />
       <Text style={styles.title}>Last {selectedDurationLabel} — Calories</Text>
       <View style={styles.chartWrapper}>
         <LineChart
@@ -105,32 +94,6 @@ export default function Insights() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    justifyContent: 'center',
-    marginBottom: 12,
-    zIndex: 10,
-  },
-  durationLabel: { fontSize: 14, fontWeight: '500' },
-  navbar: {
-    flexDirection: 'row',
-    backgroundColor: '#f2f4f7',
-    borderRadius: 999,
-    padding: 4,
-    gap: 4,
-  },
-  navItem: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-  },
-  navItemSelected: {
-    backgroundColor: '#2296f3',
-  },
-  navText: { fontSize: 14, fontWeight: '500', color: '#344054' },
-  navTextSelected: { color: '#ffffff' },
   title: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
   chartWrapper: { backgroundColor: '#fff', padding: 8, borderRadius: 8 },
 });
