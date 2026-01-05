@@ -64,15 +64,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 2,
+    color: '#034ea6',
   },
   calories: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#034ea6',
   },
   details: {
     fontSize: 12,
-    color: '#666',
+    color: '#034ea6',
     marginTop: 4,
   },
   rightAction: {

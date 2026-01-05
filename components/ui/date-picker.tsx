@@ -24,6 +24,18 @@ export default function DatePicker({ value, onChange }: Props) {
   const todayISO = useMemo(() => localDateToISO(new Date()), []);
   const canGoNext = useMemo(() => value < todayISO, [value, todayISO]);
 
+  const yesterdayISO = useMemo(() => {
+    const d = isoToLocalDate(todayISO);
+    d.setDate(d.getDate() - 1);
+    return localDateToISO(d);
+  }, [todayISO]);
+
+  const labelText = useMemo(() => {
+    if (value === todayISO) return 'Today';
+    if (value === yesterdayISO) return 'Yesterday';
+    return isoToLocalDate(value).toDateString();
+  }, [value, todayISO, yesterdayISO]);
+
   const goPrev = () => {
     const d = isoToLocalDate(value);
     d.setDate(d.getDate() - 1);
@@ -43,7 +55,7 @@ export default function DatePicker({ value, onChange }: Props) {
         <Text style={styles.navText}>◀</Text>
       </TouchableOpacity>
 
-      <Text style={styles.label}>{isoToLocalDate(value).toDateString()}</Text>
+      <Text style={styles.label}>{labelText}</Text>
 
       <TouchableOpacity disabled={!canGoNext} onPress={goNext} style={styles.nav}>
         <Text style={[styles.navText, !canGoNext && styles.navTextDisabled]}>▶</Text>

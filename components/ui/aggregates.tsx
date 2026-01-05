@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   },
   value: {
     fontWeight: '600',
-    color: '#022a66',
+    color: '#034ea6',
   },
   plus: {
     width: 40,

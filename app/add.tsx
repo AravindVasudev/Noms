@@ -81,7 +81,8 @@ const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, justifyContent: 'center' },
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
-  label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6 },
+  title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: '#034ea6' },
+  label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6, color: '#034ea6' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 8 },
   buttons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
 });
