@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
 export default function GoalsScreen() {
   const router = useRouter();
+  const { from } = useLocalSearchParams();
 
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -23,7 +24,16 @@ export default function GoalsScreen() {
     if (goals.fat.trim()) await AsyncStorage.setItem('goal-fat', goals.fat);
     if (goals.carbs.trim()) await AsyncStorage.setItem('goal-carbs', goals.carbs);
     Alert.alert('Success', 'Goals set successfully!', [
-      { text: 'OK', onPress: () => router.back() }
+      {
+        text: 'OK',
+        onPress: () => {
+          if (from === 'signup') {
+            router.replace('/(tabs)');
+          } else {
+            router.back();
+          }
+        }
+      }
     ]);
   };
 

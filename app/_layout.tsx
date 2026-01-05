@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -8,7 +8,6 @@ import 'react-native-reanimated';
 
 import { DiaryProvider } from '@/components/diary-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import SignUpScreen from './(auth)/signup';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -16,6 +15,7 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const router = useRouter();
   const [signedUp, setSignedUp] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -26,21 +26,14 @@ export default function RootLayout() {
     checkSignUp();
   }, []);
 
-  const handleContinueWithoutSignUp = async () => {
-    await AsyncStorage.setItem('signedUp', 'true');
-    setSignedUp(true);
-  };
-
-  const handleSignUp = () => {
-    console.log('Sign Up pressed');
-  };
+  useEffect(() => {
+    if (signedUp === false) {
+      router.replace('/signup');
+    }
+  }, [signedUp, router]);
 
   if (signedUp === null) {
     return null; // or loading screen
-  }
-
-  if (!signedUp) {
-    return <SignUpScreen onSignUp={handleSignUp} onContinue={handleContinueWithoutSignUp} />;
   }
 
   return (

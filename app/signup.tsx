@@ -7,24 +7,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function SignUpScreen() {
   const router = useRouter();
 
-  const handleSignUp = () => {
-    router.push('/(auth)/profile-info');
+  const onSignUp = () => {
+    router.push('/profile-info');
   };
 
-  const handleContinue = async () => {
+  const onContinue = async () => {
     await AsyncStorage.setItem('signedUp', 'true');
     router.replace('/(tabs)');
   };
   return (
     <SafeAreaView style={styles.signUpContainer}>
       <View style={styles.logoContainer}>
-        <Image source={require('../../assets/images/favicon.png')} style={styles.favicon} />
+        <Image source={require('@/assets/images/favicon.png')} style={styles.favicon} />
       </View>
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+        <TouchableOpacity style={styles.button} onPress={onSignUp}>
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleContinue}>
+        <TouchableOpacity style={styles.button} onPress={onContinue}>
           <Text style={styles.buttonText}>Continue without sign up</Text>
         </TouchableOpacity>
       </View>
