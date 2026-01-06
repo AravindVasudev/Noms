@@ -33,7 +33,7 @@ export default function Diary() {
   return (
     <SafeAreaView style={styles.safeArea}>
         <DatePicker value={selectedDate} onChange={setSelectedDate} />
-        <Aggregates totals={totals} onAdd={() => router.push({ pathname: '/add', params: { date: selectedDate.toISOString() } })} />
+        <Aggregates totals={totals} onAdd={() => router.push({ pathname: '/search', params: { date: selectedDate.toISOString() } })} />
         {filteredDiary.length === 0 ? (
           <Pressable
             style={styles.emptyContainer}

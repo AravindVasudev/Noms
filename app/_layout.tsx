@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { initializeCatalog } from '@/lib/catalogSlice';
 import { initializeDiary } from '@/lib/diarySlice';
 import { initializeGoals } from '@/lib/goalsSlice';
 import { initializeProfile } from '@/lib/profileSlice';
@@ -25,6 +26,7 @@ function AppContent() {
     dispatch(initializeDiary());
     dispatch(initializeGoals());
     dispatch(initializeProfile());
+    dispatch(initializeCatalog());
   }, [dispatch]);
 
   return (
@@ -35,6 +37,7 @@ function AppContent() {
           <Stack.Screen name="signup" options={{ headerShown: false }} />
           <Stack.Screen name="add" options={{ headerShown: false }} />
           <Stack.Screen name="goals" options={{ headerShown: false }} />
+          <Stack.Screen name="search" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </GestureHandlerRootView>

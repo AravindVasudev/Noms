@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
+import catalogReducer from './catalogSlice';
 import diaryReducer from './diarySlice';
 import goalsReducer from './goalsSlice';
 import profileReducer from './profileSlice';
@@ -9,6 +10,7 @@ const store = configureStore({
     diary: diaryReducer,
     goals: goalsReducer,
     profile: profileReducer,
+    catalog: catalogReducer,
   },
 });
 

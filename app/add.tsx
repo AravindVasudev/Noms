@@ -1,3 +1,4 @@
+import { addCatalogItemAsync } from '@/lib/catalogSlice';
 import { addEntryAsync } from '@/lib/diarySlice';
 import { useAppDispatch } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -42,8 +43,15 @@ export default function AddScreen() {
     const fiberNum = nutrition.fiber.trim() === '' ? null : parseInt(nutrition.fiber, 10);
 
     dispatch(addEntryAsync({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum, date: nutrition.date }));
+    
+    // Add to catalog if name is provided (not just "Quick Add")
+    if ((nutrition.name || '').trim().length > 0) {
+      dispatch(addCatalogItemAsync({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum }));
+    }
+    
     Keyboard.dismiss();
-    router.back();
+    router.dismissAll();
+    router.replace('/(tabs)/');
   };
 
   useEffect(() => {
