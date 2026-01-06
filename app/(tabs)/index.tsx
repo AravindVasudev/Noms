@@ -37,7 +37,7 @@ export default function Diary() {
         {filteredDiary.length === 0 ? (
           <Pressable
             style={styles.emptyContainer}
-            onPress={() => router.push({ pathname: '/add', params: { date: selectedDate.toISOString() } })}
+            onPress={() => router.push({ pathname: '/search', params: { date: selectedDate.toISOString() } })}
             accessibilityRole="button"
           >
             <Text style={styles.emptyText}>No food logged. Click here to add.</Text>
