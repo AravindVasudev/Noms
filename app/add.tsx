@@ -79,7 +79,7 @@ export default function AddScreen() {
             <TextInput style={styles.input} value={nutrition.name} onChangeText={(v) => setNutrition((p) => ({ ...p, name: v }))} />
 
             <Text style={styles.label}>Calories</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={nutrition.calories} onChangeText={(v) => setNutrition((p) => ({ ...p, calories: v }))} />
+            <TextInput style={styles.input} keyboardType="numeric" placeholder="(required)" value={nutrition.calories} onChangeText={(v) => setNutrition((p) => ({ ...p, calories: v }))} />
 
             <Text style={styles.label}>Fat (g)</Text>
             <TextInput style={styles.input} keyboardType="numeric" value={nutrition.fat} onChangeText={(v) => setNutrition((p) => ({ ...p, fat: v }))} />
