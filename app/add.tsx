@@ -83,6 +83,7 @@ export default function AddScreen() {
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.container}>
             <Text style={styles.title}>Add Entry</Text>
+            <Text style={styles.note}>Named entries will be stored in catalog for reuse</Text>
             <View style={styles.fieldRow}>
               <Text style={[styles.label, styles.labelInline]}>Name</Text>
               <TextInput style={[styles.input, styles.inputInline]} value={nutrition.name} onChangeText={(v) => setNutrition((p) => ({ ...p, name: v }))} />
@@ -136,6 +137,7 @@ const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, justifyContent: 'center', paddingBottom: 100 },
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: '#034ea6' },
+  note: { fontSize: 12, color: '#888', marginBottom: 8 },
   label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6, color: '#034ea6' },
   input: { borderWidth: 0, backgroundColor: '#f0f0f3', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 12 },
   buttons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
