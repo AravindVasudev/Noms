@@ -2,7 +2,7 @@ import { setGoalsAsync } from '@/lib/goalsSlice';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function GoalsScreen() {
@@ -64,35 +64,41 @@ export default function GoalsScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.container}>
             <Text style={styles.title}>Set Daily Goals</Text>
 
-            <Text style={styles.label}>Goal Calories</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.calories} onChangeText={(v) => setLocalGoals((p) => ({ ...p, calories: v }))} />
+            <View style={styles.fieldRow}>
+              <Text style={[styles.label, styles.labelInline]}>Calories</Text>
+              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.calories} onChangeText={(v) => setLocalGoals((p) => ({ ...p, calories: v }))} />
+            </View>
 
-            <Text style={styles.label}>Goal Protein (g)</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.protein} onChangeText={(v) => setLocalGoals((p) => ({ ...p, protein: v }))} />
+            <View style={styles.fieldRow}>
+              <Text style={[styles.label, styles.labelInline]}>Protein (g)</Text>
+              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.protein} onChangeText={(v) => setLocalGoals((p) => ({ ...p, protein: v }))} />
+            </View>
 
-            <Text style={styles.label}>Goal Fiber (g)</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.fiber} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fiber: v }))} />
+            <View style={styles.fieldRow}>
+              <Text style={[styles.label, styles.labelInline]}>Fiber (g)</Text>
+              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.fiber} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fiber: v }))} />
+            </View>
 
-            <Text style={styles.label}>Goal Fat (g)</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.fat} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fat: v }))} />
+            <View style={styles.fieldRow}>
+              <Text style={[styles.label, styles.labelInline]}>Fat (g)</Text>
+              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.fat} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fat: v }))} />
+            </View>
 
-            <Text style={styles.label}>Goal Carbs (g)</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={localGoals.carbs} onChangeText={(v) => setLocalGoals((p) => ({ ...p, carbs: v }))} />
+            <View style={styles.fieldRow}>
+              <Text style={[styles.label, styles.labelInline]}>Carbs (g)</Text>
+              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.carbs} onChangeText={(v) => setLocalGoals((p) => ({ ...p, carbs: v }))} />
+            </View>
 
             <View style={styles.buttons}>
-              <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={onSetGoals}>
-                <Text style={styles.buttonText}>Set Goals</Text>
-              </TouchableOpacity>
+              <Button title="Cancel" onPress={() => router.back()} />
+              <Button title="Set Goals" onPress={onSetGoals} />
             </View>
           </View>
         </ScrollView>
@@ -114,10 +120,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: '#034ea6' },
   label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6, color: '#034ea6' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 8 },
+  input: { borderWidth: 0, backgroundColor: '#f0f0f3', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 12 },
   buttons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
-  button: { backgroundColor: '#034ea6', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  fieldRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 8 },
+  labelInline: { marginTop: 0, marginBottom: 0, marginRight: 12, minWidth: 90 },
+  inputInline: { flex: 1, paddingVertical: 10 },
   keyboardAccessory: {
     position: 'absolute',
     left: 0,

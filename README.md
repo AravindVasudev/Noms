@@ -29,9 +29,10 @@ $ npm run ios # Start dev run on iOS.
 - [x] Implement a catalog of food entries to quick add.
 - [ ] Fix Set Goals UI to match add.tsx screen. The UX looks off.
 - [ ] Add goal direction, eating surplus calories is not always a negative.
-- [ ] Add barcode scanning option: items in catalog can be linked to a barcode value and used to quick add entries.
+- [x] Add barcode scanning option: items in catalog can be linked to a barcode value and used to quick add entries.
 - [ ] Implement option to import/export data.
 - [ ] Only load last X days of data into memory and load remaining on-demand.
 - [ ] Pre-aggregate old data and store it in a table to avoid re-computation.
 - [ ] Allow selecting graphs in insights. Make it a customizable dashboard.
 - [ ] Read Apple Health data for calories burned, weight, etc to add new graph types for insights.
+- [ ] Add option to edit entries in diary.
