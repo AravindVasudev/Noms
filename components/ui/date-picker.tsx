@@ -1,6 +1,6 @@
 import { formatDateKey } from '@/lib/date';
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Props = {
   value: Date;
@@ -39,13 +39,35 @@ export default function DatePicker({ value, onChange }: Props) {
     if (nextKey <= todayKey) onChange(d);
   };
 
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderRelease: (_, gestureState) => {
+          const SWIPE_THRESHOLD = 50;
+
+          if (gestureState.dx > SWIPE_THRESHOLD) {
+            // Right swipe - go to previous day (left button action)
+            goPrev();
+          } else if (gestureState.dx < -SWIPE_THRESHOLD) {
+            // Left swipe - go to next day (right button action)
+            goNext();
+          }
+        },
+      }),
+    [value, todayKey]
+  );
+
   return (
     <View style={styles.row}>
       <TouchableOpacity onPress={goPrev} style={styles.nav}>
         <Text style={styles.navText}>◀</Text>
       </TouchableOpacity>
 
-      <Text style={styles.label}>{labelText}</Text>
+      <View {...panResponder.panHandlers} style={styles.swipeArea}>
+        <Text style={styles.label}>{labelText}</Text>
+      </View>
 
       <TouchableOpacity disabled={!canGoNext} onPress={goNext} style={styles.nav}>
         <Text style={[styles.navText, !canGoNext && styles.navTextDisabled]}>▶</Text>
@@ -71,6 +93,10 @@ const styles = StyleSheet.create({
   },
   navTextDisabled: {
     color: '#a0bce8',
+  },
+  swipeArea: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   label: {
     fontSize: 16,

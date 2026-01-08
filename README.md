@@ -35,7 +35,7 @@ $ npm run ios # Start dev run on iOS.
 - [ ] Allow selecting graphs in insights. Make it a customizable dashboard.
 - [ ] Read Apple Health data for calories burned, weight, etc to add new graph types for insights.
 - [ ] Add option to edit entries in diary and catalog.
-- [ ] Add swipe option to date picker in the diary screen. swipe is more intuitive.
+- [x] Add swipe option to date picker in the diary screen. swipe is more intuitive.
 - [ ] For fortnight and month selection, instead of supporting side scroll, maybe sample the points and create a visual that fits in the screen.
 - [x] Catalog entries should indicate if they have a barcode associated.
 - [ ] Add serving size and quantity options. I should be able to say apple serving: 1 apple, quantity: 2. UX should be simple to pick.
