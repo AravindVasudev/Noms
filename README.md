@@ -43,3 +43,5 @@ $ npm run ios # Start dev run on iOS.
 - [ ] Fix gap between keyboard and done button when keyboard is open.
 - [x] Fix "clear app data" to clear all app data.
 - [x] Fix "clear app data" to have a warning pop-up.
+- [ ] Clean up the logo, looks off.
+- [ ] Clean the UI for sign up flow.

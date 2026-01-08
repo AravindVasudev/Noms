@@ -38,6 +38,7 @@ function AppContent() {
           <Stack.Screen name="add" options={{ headerShown: false }} />
           <Stack.Screen name="goals" options={{ headerShown: false }} />
           <Stack.Screen name="search" options={{ headerShown: false }} />
+          <Stack.Screen name="manage-data" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </GestureHandlerRootView>
