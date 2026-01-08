@@ -10,7 +10,14 @@ type Props = {
 
 export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: Props) {
   const [hasPermission, setHasPermission] = useState(false);
+  const [hasScanned, setHasScanned] = useState(false);
   const device = useCameraDevice('back');
+
+  useEffect(() => {
+    if (visible) {
+      setHasScanned(false);
+    }
+  }, [visible]);
 
   useEffect(() => {
     const requestPermissions = async () => {
@@ -37,7 +44,8 @@ export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: P
       'upc-e',
     ],
     onCodeScanned: (codes) => {
-      if (codes.length > 0 && codes[0].value) {
+      if (codes.length > 0 && codes[0].value && !hasScanned) {
+        setHasScanned(true);
         const barcode = codes[0].value;
         onClose();
         setTimeout(() => {
