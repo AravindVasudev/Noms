@@ -3,6 +3,7 @@ import { removeCatalogItemAsync } from '@/lib/catalogSlice';
 import { addEntryAsync } from '@/lib/diarySlice';
 import { useAppDispatch } from '@/lib/store';
 import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
@@ -63,11 +64,20 @@ export default function CatalogEntries({ items, date }: Props) {
           <Swipeable renderRightActions={renderRight(item)}>
             <TouchableOpacity onPress={() => handleItemPress(item)}>
               <View style={styles.item}>
-                <Text style={styles.name}>{name}</Text>
-                <Text style={styles.calories}>{calories} Cal</Text>
-                <Text style={styles.details}>
-                  (F: {fat}g  C: {carbs}g  P: {protein}g  Fi: {fiber}g)
-                </Text>
+                <View style={styles.itemContent}>
+                  <View style={styles.itemText}>
+                    <Text style={styles.name}>{name}</Text>
+                    <Text style={styles.calories}>{calories} Cal</Text>
+                    <Text style={styles.details}>
+                      (F: {fat}g  C: {carbs}g  P: {protein}g  Fi: {fiber}g)
+                    </Text>
+                  </View>
+                  {item.barcode && (
+                    <View style={styles.barcodeContainer}>
+                      <SymbolView name="barcode.viewfinder" size={20} tintColor="#034ea6" />
+                    </View>
+                  )}
+                </View>
               </View>
             </TouchableOpacity>
           </Swipeable>
@@ -82,6 +92,17 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+  },
+  itemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  itemText: {
+    flex: 1,
+  },
+  barcodeContainer: {
+    marginLeft: 8,
   },
   name: {
     fontSize: 16,
