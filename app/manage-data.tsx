@@ -93,6 +93,8 @@ export default function ManageData() {
       {/* Data Management Options */}
       <View style={styles.section}>
         <SettingsItem title="Export App Data" onPress={handleExportData} />
+      </View>
+      <View style={styles.section}>
         <SettingsItem title="Clear App Data" onPress={handleClearAppData} destructive />
       </View>
     </SafeAreaView>
@@ -114,6 +116,8 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: '#ffffff',
+    marginHorizontal: 16,
+    marginBottom: 16,
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
