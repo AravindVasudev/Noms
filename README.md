@@ -30,7 +30,8 @@ $ npm run ios # Start dev run on iOS.
 - [x] Fix Set Goals UI to match add.tsx screen. The UX looks off.
 - [ ] Add goal direction, eating surplus calories is not always a negative.
 - [x] Add barcode scanning option: items in catalog can be linked to a barcode value and used to quick add entries.
-- [ ] Implement option to import/export data.
+- [ ] Implement option to import data.
+- [x] Implement option to export data.
 - [ ] Only load last X days of data into memory and load remaining on-demand.
 - [ ] Pre-aggregate old data and store it in a table to avoid re-computation.
 - [ ] Allow selecting graphs in insights. Make it a customizable dashboard.

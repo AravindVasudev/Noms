@@ -1,4 +1,6 @@
+import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import React from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,11 +9,58 @@ import { clearAllAsync as clearCatalog } from '../lib/catalogSlice';
 import { clearAllAsync as clearDiary } from '../lib/diarySlice';
 import { clearAllAsync as clearGoals } from '../lib/goalsSlice';
 import { clearAllAsync as clearProfile } from '../lib/profileSlice';
-import { useAppDispatch } from '../lib/store';
+import { useAppDispatch, useAppSelector } from '../lib/store';
 
 export default function ManageData() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const profile = useAppSelector((state) => state.profile);
+  const goals = useAppSelector((state) => state.goals);
+  const catalog = useAppSelector((state) => state.catalog);
+  const diary = useAppSelector((state) => state.diary);
+
+  const handleExportData = () => {
+    Alert.alert(
+      'Export Data',
+      'Export all app data?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes',
+          onPress: async () => {
+            try {
+              // Create JSON object with all app data
+              const exportData = {
+                profile,
+                goals,
+                catalog,
+                diary,
+                exportDate: new Date().toISOString(),
+              };
+
+              // Convert to JSON string
+              const jsonString = JSON.stringify(exportData, null, 2);
+
+              // Create temporary file
+              const file = new FileSystem.File(FileSystem.Paths.cache, 'noms-export.json');
+              await file.create({ overwrite: true });
+              file.write(jsonString);
+
+              // Share the file (iOS will show save/share options)
+              await Sharing.shareAsync(file.uri, {
+                mimeType: 'application/json',
+                dialogTitle: 'Export App Data',
+                UTI: 'public.json',
+              });
+            } catch (error) {
+              Alert.alert('Export Failed', 'An error occurred while exporting data.');
+              console.error('Export error:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleClearAppData = () => {
     Alert.alert(
@@ -43,6 +92,7 @@ export default function ManageData() {
 
       {/* Data Management Options */}
       <View style={styles.section}>
+        <SettingsItem title="Export App Data" onPress={handleExportData} />
         <SettingsItem title="Clear App Data" onPress={handleClearAppData} destructive />
       </View>
     </SafeAreaView>
