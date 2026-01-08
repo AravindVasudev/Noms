@@ -4,6 +4,7 @@ import catalogStore from '@/lib/catalog-store';
 import { addEntryAsync } from '@/lib/diarySlice';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -90,7 +91,7 @@ export default function SearchScreen() {
           style={styles.barcodeButton}
           onPress={() => setScannerVisible(true)}
         >
-          <Text style={styles.barcodeButtonText}>⊟</Text>
+          <SymbolView name="barcode.viewfinder" size={20} tintColor="#fff" />
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.addButton}
