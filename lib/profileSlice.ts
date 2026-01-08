@@ -26,6 +26,11 @@ const setDisplayPictureAsync = createAsyncThunk('profile/setDisplayPicture', asy
   return base64Image;
 });
 
+const clearAllAsync = createAsyncThunk('profile/clearAll', async () => {
+  await AsyncStorage.multiRemove(['username', 'displayPicture', 'signedUp']);
+  return { username: 'User', displayPicture: null };
+});
+
 const profileSlice = createSlice({
   name: 'profile',
   initialState: { username: 'User', displayPicture: null } as Profile,
@@ -40,9 +45,12 @@ const profileSlice = createSlice({
       })
       .addCase(setDisplayPictureAsync.fulfilled, (state, action) => {
         state.displayPicture = action.payload;
+      })
+      .addCase(clearAllAsync.fulfilled, (state, action) => {
+        return action.payload;
       });
   },
 });
 
-export { initializeProfile, setDisplayPictureAsync, setUsernameAsync };
+export { clearAllAsync, initializeProfile, setDisplayPictureAsync, setUsernameAsync };
 export default profileSlice.reducer;

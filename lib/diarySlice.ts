@@ -27,14 +27,16 @@ const removeEntryAsync = createAsyncThunk('diary/removeEntry', async (id: number
   return id;
 });
 
+const clearAllAsync = createAsyncThunk('diary/clearAll', async () => {
+  await journalStore.dropTable();
+  await journalStore.init();
+  return [];
+});
+
 const diarySlice = createSlice({
   name: 'diary',
   initialState: { diary: [] as Nutrition[] },
-  reducers: {
-    clearAll: (state) => {
-      state.diary = [];
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(initializeDiary.fulfilled, (state, action) => {
@@ -49,10 +51,12 @@ const diarySlice = createSlice({
         if (index !== -1) {
           state.diary.splice(index, 1);
         }
+      })
+      .addCase(clearAllAsync.fulfilled, (state, action) => {
+        state.diary = action.payload;
       });
   },
 });
 
-export const { clearAll } = diarySlice.actions;
-export { addEntryAsync, initializeDiary, removeEntryAsync };
+export { addEntryAsync, clearAllAsync, initializeDiary, removeEntryAsync };
 export default diarySlice.reducer;

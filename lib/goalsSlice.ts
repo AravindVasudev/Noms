@@ -29,6 +29,11 @@ const setGoalsAsync = createAsyncThunk('goals/setGoals', async (goals: Goals) =>
   return goals;
 });
 
+const clearAllAsync = createAsyncThunk('goals/clearAll', async () => {
+  await AsyncStorage.multiRemove(['goal-calories', 'goal-protein', 'goal-fiber', 'goal-fat', 'goal-carbs']);
+  return { calories: '', protein: '', fiber: '', fat: '', carbs: '' };
+});
+
 const goalsSlice = createSlice({
   name: 'goals',
   initialState: { calories: '', protein: '', fiber: '', fat: '', carbs: '' } as Goals,
@@ -40,9 +45,12 @@ const goalsSlice = createSlice({
       })
       .addCase(setGoalsAsync.fulfilled, (state, action) => {
         return action.payload;
+      })
+      .addCase(clearAllAsync.fulfilled, (state, action) => {
+        return action.payload;
       });
   },
 });
 
-export { initializeGoals, setGoalsAsync };
+export { clearAllAsync, initializeGoals, setGoalsAsync };
 export default goalsSlice.reducer;

@@ -1,12 +1,13 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ProfileCard from '../../components/ui/profile-card';
 import SettingsItem from '../../components/ui/settings-item';
-import { clearAll } from '../../lib/diarySlice';
-import journalStore from '../../lib/journal-store';
+import { clearAllAsync as clearCatalog } from '../../lib/catalogSlice';
+import { clearAllAsync as clearDiary } from '../../lib/diarySlice';
+import { clearAllAsync as clearGoals } from '../../lib/goalsSlice';
+import { clearAllAsync as clearProfile } from '../../lib/profileSlice';
 import { useAppDispatch } from '../../lib/store';
 
 export default function Settings() {
@@ -18,10 +19,12 @@ export default function Settings() {
   };
 
   const handleClearAppData = async () => {
-    await journalStore.dropTable();
-    await journalStore.init();
-    dispatch(clearAll());
-    await AsyncStorage.multiRemove(['goal-calories', 'goal-protein', 'goal-fiber', 'goal-fat', 'goal-carbs', 'username', 'signedUp']);
+    // Clear all slices.
+    await dispatch(clearDiary());
+    await dispatch(clearCatalog());
+    await dispatch(clearGoals());
+    await dispatch(clearProfile());
+
     Alert.alert('Data Cleared', 'All app data has been cleared.');
     router.replace('/signup');
   };
