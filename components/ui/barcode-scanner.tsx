@@ -5,9 +5,10 @@ import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-cam
 type Props = {
   visible: boolean;
   onClose: () => void;
+  onBarcodeScanned: (barcode: string) => void;
 };
 
-export default function BarcodeScanner({ visible, onClose }: Props) {
+export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: Props) {
   const [hasPermission, setHasPermission] = useState(false);
   const device = useCameraDevice('back');
 
@@ -39,9 +40,8 @@ export default function BarcodeScanner({ visible, onClose }: Props) {
       if (codes.length > 0 && codes[0].value) {
         const barcode = codes[0].value;
         onClose();
-        // Show alert after closing to avoid visual conflict
         setTimeout(() => {
-          Alert.alert('Barcode Scanned', barcode);
+          onBarcodeScanned(barcode);
         }, 100);
       }
     },

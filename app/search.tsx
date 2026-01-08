@@ -1,19 +1,46 @@
 import BarcodeScanner from '@/components/ui/barcode-scanner';
 import CatalogEntries from '@/components/ui/catalog-entries';
-import { useAppSelector } from '@/lib/store';
+import catalogStore from '@/lib/catalog-store';
+import { addEntryAsync } from '@/lib/diarySlice';
+import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SearchScreen() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { date: paramDate } = useLocalSearchParams();
   const catalog = useAppSelector(state => state.catalog.catalog);
   const [searchQuery, setSearchQuery] = useState('');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [scannerVisible, setScannerVisible] = useState(false);
+
+  const handleBarcodeScanned = async (barcode: string) => {
+    try {
+      const catalogItem = await catalogStore.getEntryByBarcode(barcode);
+      if (catalogItem) {
+        const date = paramDate ? new Date(paramDate as string) : new Date();
+        dispatch(addEntryAsync({
+          name: catalogItem.name,
+          calories: catalogItem.calories || 0,
+          fat: catalogItem.fat,
+          protein: catalogItem.protein,
+          carbs: catalogItem.carbs,
+          fiber: catalogItem.fiber,
+          date,
+        }));
+        router.replace('/(tabs)/');
+      } else {
+        router.replace({ pathname: '/add', params: { ...paramDate ? { date: paramDate } : {}, barcode } });
+      }
+    } catch (error) {
+      console.error('Barcode scan error:', error);
+      Alert.alert('Error', `Failed to process barcode: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   const filteredCatalog = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -92,7 +119,11 @@ export default function SearchScreen() {
       )}
       </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
-      <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} />
+      <BarcodeScanner 
+        visible={scannerVisible} 
+        onClose={() => setScannerVisible(false)} 
+        onBarcodeScanned={handleBarcodeScanned}
+      />
     </SafeAreaView>
   );
 }

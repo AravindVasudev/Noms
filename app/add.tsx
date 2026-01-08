@@ -10,12 +10,13 @@ export default function AddScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const { date: paramDate } = useLocalSearchParams();
+  const { date: paramDate, barcode } = useLocalSearchParams();
   const today = new Date();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [nutrition, setNutrition] = useState({
     name: '',
+    barcode: (barcode as string) || null,
     calories: '',
     fat: '',
     protein: '',
@@ -46,7 +47,7 @@ export default function AddScreen() {
     
     // Add to catalog if name is provided (not just "Quick Add")
     if ((nutrition.name || '').trim().length > 0) {
-      dispatch(addCatalogItemAsync({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum }));
+      dispatch(addCatalogItemAsync({ name, barcode: nutrition.barcode, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum }));
     }
     
     Keyboard.dismiss();
