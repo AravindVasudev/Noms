@@ -41,5 +41,5 @@ $ npm run ios # Start dev run on iOS.
 - [x] Catalog entries should indicate if they have a barcode associated.
 - [ ] Add serving size and quantity options. I should be able to say apple serving: 1 apple, quantity: 2. UX should be simple to pick.
 - [ ] Fix gap between keyboard and done button when keyboard is open.
-- [ ] Fix "clear app data" to clear all app data.
-- [ ] Fix "clear app data" to have a warning pop-up.
+- [x] Fix "clear app data" to clear all app data.
+- [x] Fix "clear app data" to have a warning pop-up.

@@ -18,15 +18,28 @@ export default function Settings() {
     router.push('/goals');
   };
 
-  const handleClearAppData = async () => {
-    // Clear all slices.
-    await dispatch(clearDiary());
-    await dispatch(clearCatalog());
-    await dispatch(clearGoals());
-    await dispatch(clearProfile());
+  const handleClearAppData = () => {
+    Alert.alert(
+      'Clear App Data',
+      'This operation is unrevertable. Do you want to proceed?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            // Clear all slices.
+            await dispatch(clearDiary());
+            await dispatch(clearCatalog());
+            await dispatch(clearGoals());
+            await dispatch(clearProfile());
 
-    Alert.alert('Data Cleared', 'All app data has been cleared.');
-    router.replace('/signup');
+            Alert.alert('Data Cleared', 'All app data has been cleared.');
+            router.replace('/signup');
+          },
+        },
+      ]
+    );
   };
 
   return (
