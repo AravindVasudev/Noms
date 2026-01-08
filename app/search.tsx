@@ -1,3 +1,4 @@
+import BarcodeScanner from '@/components/ui/barcode-scanner';
 import CatalogEntries from '@/components/ui/catalog-entries';
 import { useAppSelector } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,6 +13,7 @@ export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [scannerVisible, setScannerVisible] = useState(false);
 
   const filteredCatalog = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -58,6 +60,12 @@ export default function SearchScreen() {
           onChangeText={setSearchQuery}
         />
         <TouchableOpacity 
+          style={styles.barcodeButton}
+          onPress={() => setScannerVisible(true)}
+        >
+          <Text style={styles.barcodeButtonText}>⊟</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
           style={styles.addButton}
           onPress={() => router.replace({ pathname: '/add', params: paramDate ? { date: paramDate } : {} })}
         >
@@ -84,6 +92,7 @@ export default function SearchScreen() {
       )}
       </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+      <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -97,7 +106,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   searchInput: {
     flex: 1,
@@ -118,6 +127,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addButtonText: {
+    color: '#fff',
+    fontSize: 24,
+    lineHeight: 26,
+    fontWeight: '600',
+  },
+  barcodeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  barcodeButtonText: {
     color: '#fff',
     fontSize: 24,
     lineHeight: 26,
