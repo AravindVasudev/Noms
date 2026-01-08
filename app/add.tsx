@@ -2,6 +2,7 @@ import { addCatalogItemAsync } from '@/lib/catalogSlice';
 import { addEntryAsync } from '@/lib/diarySlice';
 import { useAppDispatch } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +29,13 @@ export default function AddScreen() {
   const onAdd = () => {
     const name = (nutrition.name || '').trim() || 'Quick Add';
     const calories = (nutrition.calories || '').trim();
+    
+    // Validate name is required for barcoded items
+    if (nutrition.barcode && (nutrition.name || '').trim().length === 0) {
+      Alert.alert('Validation', 'Name is required to store barcoded items');
+      return;
+    }
+    
     if (calories.length === 0) {
       Alert.alert('Validation', 'Calories is required');
       return;
@@ -84,15 +92,37 @@ export default function AddScreen() {
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.container}>
             <Text style={styles.title}>Add Entry</Text>
-            <Text style={styles.note}>Named entries will be stored in catalog for reuse</Text>
+            <View style={styles.noteContainer}>
+              <Text style={styles.note}>
+                {nutrition.barcode 
+                  ? 'Entry will be stored w/ barcode for convenience' 
+                  : 'Named entries will be stored in catalog for reuse'}
+              </Text>
+              {nutrition.barcode && (
+                <SymbolView name="barcode.viewfinder" size={14} tintColor="#888" style={styles.barcodeIcon} />
+              )}
+            </View>
             <View style={styles.fieldRow}>
               <Text style={[styles.label, styles.labelInline]}>Name</Text>
-              <TextInput style={[styles.input, styles.inputInline]} value={nutrition.name} onChangeText={(v) => setNutrition((p) => ({ ...p, name: v }))} />
+              <TextInput 
+                style={[styles.input, styles.inputInline]} 
+                placeholder={nutrition.barcode ? '(required)' : ''}
+                placeholderTextColor="#666"
+                value={nutrition.name} 
+                onChangeText={(v) => setNutrition((p) => ({ ...p, name: v }))} 
+              />
             </View>
 
             <View style={styles.fieldRow}>
               <Text style={[styles.label, styles.labelInline]}>Calories</Text>
-              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" placeholder="(required)" value={nutrition.calories} onChangeText={(v) => setNutrition((p) => ({ ...p, calories: v }))} />
+              <TextInput 
+                style={[styles.input, styles.inputInline]} 
+                keyboardType="numeric" 
+                placeholder="(required)" 
+                placeholderTextColor="#666"
+                value={nutrition.calories} 
+                onChangeText={(v) => setNutrition((p) => ({ ...p, calories: v }))} 
+              />
             </View>
 
             <View style={styles.fieldRow}>
@@ -138,7 +168,9 @@ const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, justifyContent: 'center', paddingBottom: 100 },
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: '#034ea6' },
-  note: { fontSize: 12, color: '#888', marginBottom: 8 },
+  noteContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  note: { fontSize: 12, color: '#888' },
+  barcodeIcon: { marginLeft: 6 },
   label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6, color: '#034ea6' },
   input: { borderWidth: 0, backgroundColor: '#f0f0f3', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 12 },
   buttons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
