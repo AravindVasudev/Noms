@@ -1,18 +1,21 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { setSignedUpAsync } from '@/lib/profileSlice';
+import { useAppDispatch } from '@/lib/store';
+
 export default function SignUpScreen() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const onSignUp = () => {
     router.push('/profile-info');
   };
 
   const onContinue = async () => {
-    await AsyncStorage.setItem('signedUp', 'true');
+    await dispatch(setSignedUpAsync(true));
     router.replace('/(tabs)');
   };
   return (

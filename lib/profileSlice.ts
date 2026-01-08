@@ -4,12 +4,14 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 export type Profile = {
   username: string;
   displayPicture: string | null;
+  signedUp: boolean;
 };
 
 const initializeProfile = createAsyncThunk('profile/initialize', async () => {
   const username = await AsyncStorage.getItem('username') || 'User';
   const displayPicture = await AsyncStorage.getItem('displayPicture');
-  return { username, displayPicture };
+  const signedUp = (await AsyncStorage.getItem('signedUp')) === 'true';
+  return { username, displayPicture, signedUp };
 });
 
 const setUsernameAsync = createAsyncThunk('profile/setUsername', async (username: string) => {
@@ -28,7 +30,7 @@ const setDisplayPictureAsync = createAsyncThunk('profile/setDisplayPicture', asy
 
 const clearAllAsync = createAsyncThunk('profile/clearAll', async () => {
   await AsyncStorage.multiRemove(['username', 'displayPicture', 'signedUp']);
-  return { username: 'User', displayPicture: null };
+  return { username: 'User', displayPicture: null, signedUp: false };
 });
 
 const setProfile = createAsyncThunk('profile/setProfile', async (profile: Profile) => {
@@ -36,12 +38,18 @@ const setProfile = createAsyncThunk('profile/setProfile', async (profile: Profil
   if (profile.displayPicture) {
     await AsyncStorage.setItem('displayPicture', profile.displayPicture);
   }
+  await AsyncStorage.setItem('signedUp', String(profile.signedUp));
   return profile;
+});
+
+const setSignedUpAsync = createAsyncThunk('profile/setSignedUp', async (signedUp: boolean) => {
+  await AsyncStorage.setItem('signedUp', String(signedUp));
+  return signedUp;
 });
 
 const profileSlice = createSlice({
   name: 'profile',
-  initialState: { username: 'User', displayPicture: null } as Profile,
+  initialState: { username: 'User', displayPicture: null, signedUp: false } as Profile,
   reducers: {},
   extraReducers: (builder) => {
     builder
@@ -59,9 +67,12 @@ const profileSlice = createSlice({
       })
       .addCase(setProfile.fulfilled, (state, action) => {
         return action.payload;
+      })
+      .addCase(setSignedUpAsync.fulfilled, (state, action) => {
+        state.signedUp = action.payload;
       });
   },
 });
 
-export { clearAllAsync, initializeProfile, setDisplayPictureAsync, setProfile, setUsernameAsync };
+export { clearAllAsync, initializeProfile, setDisplayPictureAsync, setProfile, setSignedUpAsync, setUsernameAsync };
 export default profileSlice.reducer;

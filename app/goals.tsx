@@ -1,4 +1,5 @@
 import { setGoalsAsync } from '@/lib/goalsSlice';
+import { setSignedUpAsync } from '@/lib/profileSlice';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -27,6 +28,9 @@ export default function GoalsScreen() {
 
   const onSetGoals = async () => {
     dispatch(setGoalsAsync(localGoals));
+    if (from === 'signup') {
+      await dispatch(setSignedUpAsync(true));
+    }
     Alert.alert('Success', 'Goals set successfully!', [
       {
         text: 'OK',

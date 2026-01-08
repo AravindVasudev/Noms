@@ -32,8 +32,6 @@ $ npm run ios # Start dev run on iOS.
 - [x] Add barcode scanning option: items in catalog can be linked to a barcode value and used to quick add entries.
 - [x] Implement option to import data.
 - [x] Implement option to export data.
-- [ ] Only load last X days of data into memory and load remaining on-demand.
-- [ ] Pre-aggregate old data and store it in a table to avoid re-computation.
 - [ ] Allow selecting graphs in insights. Make it a customizable dashboard.
 - [ ] Read Apple Health data for calories burned, weight, etc to add new graph types for insights.
 - [ ] Add option to edit entries in diary and catalog.
@@ -46,3 +44,11 @@ $ npm run ios # Start dev run on iOS.
 - [x] Fix "clear app data" to have a warning pop-up.
 - [ ] Clean up the logo, looks off.
 - [ ] Clean the UI for sign up flow.
+- [ ] Add flow to suggest goals based on standard TDEE questionaire.
+- [ ] Tech Debt
+  - [ ] Only load last X days of data into memory and load remaining on-demand.
+  - [ ] Pre-aggregate old data and store it in a table to avoid re-computation.
+  - [ ] Create combined stateless UI component for journal-entries and catalod entries.
+  - [ ] Create a combined style for all text boxes, buttons, etc and maintain a standard theme across the app.
+  - [ ] Create a SettingsList component and combine settings and manage-data screens.
+  - [ ] Rename diarySlice & journal-store, use a consistent name.
