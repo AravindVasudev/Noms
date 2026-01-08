@@ -39,3 +39,7 @@ $ npm run ios # Start dev run on iOS.
 - [ ] Add swipe option to date picker in the diary screen. swipe is more intuitive.
 - [ ] For fortnight and month selection, instead of supporting side scroll, maybe sample the points and create a visual that fits in the screen.
 - [x] Catalog entries should indicate if they have a barcode associated.
+- [ ] Add serving size and quantity options. I should be able to say apple serving: 1 apple, quantity: 2. UX should be simple to pick.
+- [ ] Fix gap between keyboard and done button when keyboard is open.
+- [ ] Fix "clear app data" to clear all app data.
+- [ ] Fix "clear app data" to have a warning pop-up.
