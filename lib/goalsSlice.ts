@@ -48,7 +48,7 @@ const goalsSlice = createSlice({
       })
       .addCase(clearAllAsync.fulfilled, (state, action) => {
         return action.payload;
-      });
+      })
   },
 });
 

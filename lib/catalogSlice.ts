@@ -22,6 +22,19 @@ const clearAllAsync = createAsyncThunk('catalog/clearAll', async () => {
   return [];
 });
 
+const setCatalog = createAsyncThunk('catalog/setCatalog', async (data: { catalog: CatalogRow[] }) => {
+  await catalogStore.dropTable();
+  await catalogStore.init();
+  const insertedItems = [];
+  for (const item of data.catalog) {
+    // Remove id field as it will be auto-generated
+    const { id, ...itemWithoutId } = item;
+    const insertId = await catalogStore.insertEntry(itemWithoutId as any);
+    insertedItems.push({ ...itemWithoutId, id: insertId });
+  }
+  return insertedItems;
+});
+
 const catalogSlice = createSlice({
   name: 'catalog',
   initialState: { catalog: [] as CatalogRow[] },
@@ -43,9 +56,12 @@ const catalogSlice = createSlice({
       })
       .addCase(clearAllAsync.fulfilled, (state, action) => {
         state.catalog = action.payload;
+      })
+      .addCase(setCatalog.fulfilled, (state, action) => {
+        state.catalog = action.payload;
       });
   },
 });
 
-export { addCatalogItemAsync, clearAllAsync, initializeCatalog, removeCatalogItemAsync };
+export { addCatalogItemAsync, clearAllAsync, initializeCatalog, removeCatalogItemAsync, setCatalog };
 export default catalogSlice.reducer;

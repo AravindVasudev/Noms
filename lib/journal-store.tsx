@@ -59,7 +59,7 @@ class JournalStore {
       entry.protein,
       entry.carbs,
       entry.fiber,
-      entry.date.toISOString(),
+      typeof entry.date === 'string' ? entry.date : entry.date.toISOString(),
     ];
     const db = await this.getDb();
     const res = await db.runAsync(

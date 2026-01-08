@@ -1,3 +1,4 @@
+import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
@@ -5,10 +6,10 @@ import React from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SettingsItem from '../components/ui/settings-item';
-import { clearAllAsync as clearCatalog } from '../lib/catalogSlice';
-import { clearAllAsync as clearDiary } from '../lib/diarySlice';
-import { clearAllAsync as clearGoals } from '../lib/goalsSlice';
-import { clearAllAsync as clearProfile } from '../lib/profileSlice';
+import { clearAllAsync as clearCatalog, setCatalog } from '../lib/catalogSlice';
+import { clearAllAsync as clearDiary, setDiary } from '../lib/diarySlice';
+import { clearAllAsync as clearGoals, setGoalsAsync } from '../lib/goalsSlice';
+import { clearAllAsync as clearProfile, setProfile } from '../lib/profileSlice';
 import { useAppDispatch, useAppSelector } from '../lib/store';
 
 export default function ManageData() {
@@ -62,6 +63,59 @@ export default function ManageData() {
     );
   };
 
+  const handleImportData = async () => {
+    try {
+      // Open document picker for JSON files
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      // Read the file content
+      const file = new FileSystem.File(result.assets[0].uri);
+      const fileContent = await file.text();
+      const importedData = JSON.parse(fileContent);
+
+      // Validate the imported data structure
+      if (
+        !('profile' in importedData) ||
+        !('goals' in importedData) ||
+        !('catalog' in importedData) ||
+        !('diary' in importedData)
+      ) {
+        Alert.alert('Invalid File', 'Invalid file type');
+        return;
+      }
+
+      // Confirm before importing
+      Alert.alert(
+        'Import Data',
+        'This will replace all current app data. Continue?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Import',
+            onPress: async () => {
+              await dispatch(setProfile(importedData.profile));
+              await dispatch(setGoalsAsync(importedData.goals));
+              await dispatch(setCatalog(importedData.catalog));
+              await dispatch(setDiary(importedData.diary));
+
+              Alert.alert('Success', 'Data imported successfully!');
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Import Failed', 'Invalid file type');
+      console.error('Import error:', error);
+    }
+  };
+
   const handleClearAppData = () => {
     Alert.alert(
       'Clear App Data',
@@ -91,6 +145,9 @@ export default function ManageData() {
       <Text style={styles.title}>Manage Data</Text>
 
       {/* Data Management Options */}
+      <View style={styles.section}>
+        <SettingsItem title="Import App Data" onPress={handleImportData} />
+      </View>
       <View style={styles.section}>
         <SettingsItem title="Export App Data" onPress={handleExportData} />
       </View>

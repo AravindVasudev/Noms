@@ -31,6 +31,14 @@ const clearAllAsync = createAsyncThunk('profile/clearAll', async () => {
   return { username: 'User', displayPicture: null };
 });
 
+const setProfile = createAsyncThunk('profile/setProfile', async (profile: Profile) => {
+  await AsyncStorage.setItem('username', profile.username);
+  if (profile.displayPicture) {
+    await AsyncStorage.setItem('displayPicture', profile.displayPicture);
+  }
+  return profile;
+});
+
 const profileSlice = createSlice({
   name: 'profile',
   initialState: { username: 'User', displayPicture: null } as Profile,
@@ -48,9 +56,12 @@ const profileSlice = createSlice({
       })
       .addCase(clearAllAsync.fulfilled, (state, action) => {
         return action.payload;
+      })
+      .addCase(setProfile.fulfilled, (state, action) => {
+        return action.payload;
       });
   },
 });
 
-export { clearAllAsync, initializeProfile, setDisplayPictureAsync, setUsernameAsync };
+export { clearAllAsync, initializeProfile, setDisplayPictureAsync, setProfile, setUsernameAsync };
 export default profileSlice.reducer;
