@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
 
@@ -10,12 +10,12 @@ type Props = {
 
 export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: Props) {
   const [hasPermission, setHasPermission] = useState(false);
-  const [hasScanned, setHasScanned] = useState(false);
+  const hasScannedRef = useRef(false);
   const device = useCameraDevice('back');
 
   useEffect(() => {
     if (visible) {
-      setHasScanned(false);
+      hasScannedRef.current = false;
     }
   }, [visible]);
 
@@ -44,8 +44,8 @@ export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: P
       'upc-e',
     ],
     onCodeScanned: (codes) => {
-      if (codes.length > 0 && codes[0].value && !hasScanned) {
-        setHasScanned(true);
+      if (codes.length > 0 && codes[0].value && !hasScannedRef.current) {
+        hasScannedRef.current = true;
         const barcode = codes[0].value;
         onClose();
         setTimeout(() => {
