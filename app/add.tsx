@@ -1,8 +1,8 @@
 import { addCatalogItemAsync } from '@/lib/catalogSlice';
 import { addEntryAsync } from '@/lib/diarySlice';
+import BarcodeIcon from '@/components/ui/barcode-icon';
 import { useAppDispatch } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -60,10 +60,12 @@ export default function AddScreen() {
     
     Keyboard.dismiss();
     router.dismissAll();
-    router.replace('/(tabs)/');
+    router.replace('/(tabs)');
   };
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
+
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
@@ -88,7 +90,7 @@ export default function AddScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'web' ? undefined : Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.container}>
             <Text style={styles.title}>Add Entry</Text>
@@ -99,7 +101,7 @@ export default function AddScreen() {
                   : 'Named entries will be stored in catalog for reuse'}
               </Text>
               {nutrition.barcode && (
-                <SymbolView name="barcode.viewfinder" size={14} tintColor="#888" style={styles.barcodeIcon} />
+                <BarcodeIcon size={14} tintColor="#888" style={styles.barcodeIcon} />
               )}
             </View>
             <View style={styles.fieldRow}>
@@ -151,7 +153,7 @@ export default function AddScreen() {
             </View>
           </View>
         </ScrollView>
-        {keyboardVisible && (
+        {Platform.OS !== 'web' && keyboardVisible && (
           <View style={[styles.keyboardAccessory, { bottom: keyboardHeight }]}>
             <TouchableOpacity onPress={() => Keyboard.dismiss()} style={styles.doneButton}>
               <Text style={styles.doneText}>Done</Text>

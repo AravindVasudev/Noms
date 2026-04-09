@@ -1,10 +1,10 @@
 import BarcodeScanner from '@/components/ui/barcode-scanner';
+import BarcodeIcon from '@/components/ui/barcode-icon';
 import CatalogEntries from '@/components/ui/catalog-entries';
 import catalogStore from '@/lib/catalog-store';
 import { addEntryAsync } from '@/lib/diarySlice';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,7 +33,7 @@ export default function SearchScreen() {
           fiber: catalogItem.fiber,
           date,
         }));
-        router.replace('/(tabs)/');
+        router.replace('/(tabs)');
       } else {
         router.replace({ pathname: '/add', params: { ...paramDate ? { date: paramDate } : {}, barcode } });
       }
@@ -54,6 +54,8 @@ export default function SearchScreen() {
   }, [catalog, searchQuery]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
+
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
@@ -78,7 +80,7 @@ export default function SearchScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'web' ? undefined : Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -87,11 +89,11 @@ export default function SearchScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.barcodeButton}
           onPress={() => setScannerVisible(true)}
         >
-          <SymbolView name="barcode.viewfinder" size={20} tintColor="#fff" />
+          <BarcodeIcon size={20} tintColor="#fff" />
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.addButton}
@@ -111,7 +113,7 @@ export default function SearchScreen() {
       ) : (
         <CatalogEntries items={filteredCatalog} date={paramDate ? new Date(paramDate as string) : new Date()} />
       )}
-      {keyboardVisible && (
+      {Platform.OS !== 'web' && keyboardVisible && (
         <View style={[styles.keyboardAccessory, { bottom: keyboardHeight }]}>
           <TouchableOpacity onPress={() => Keyboard.dismiss()} style={styles.doneButton}>
             <Text style={styles.doneText}>Done</Text>
