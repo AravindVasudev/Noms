@@ -1,23 +1,31 @@
+import { Tabs } from 'expo-router';
 import React from 'react';
-
-import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
-
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   return (
-    <NativeTabs>
-      <NativeTabs.Trigger name="index">
-        <Label>Diary</Label>
-        <Icon sf="book.fill" drawable="custom_android_drawable" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="insights">
-        <Icon sf="graph.2d" drawable="custom_settings_drawable" />
-        <Label>Insights</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="settings">
-        <Icon sf="gear" drawable="custom_settings_drawable" />
-        <Label>Settings</Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Diary',
+          tabBarIcon: ({ color, size }) => <Ionicons name="book" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="insights"
+        options={{
+          title: 'Insights',
+          tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+        }}
+      />
+    </Tabs>
   );
 }

@@ -1,6 +1,6 @@
 import { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel } from '@/lib/date';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Dimensions, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DurationPicker from '../../components/ui/duration-picker';
 import LineChartCard from '../../components/ui/line-chart-card';
@@ -72,7 +72,8 @@ export default function Insights() {
     setLoading(false);
   }, [diary, duration]);
 
-  const screenWidth = Dimensions.get('window').width - 32;
+  const { width: windowWidth } = useWindowDimensions();
+  const screenWidth = windowWidth - 32;
 
   if (loading) {
     return (

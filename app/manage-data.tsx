@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SettingsItem from '../components/ui/settings-item';
 import { clearAllAsync as clearCatalog, setCatalog } from '../lib/catalogSlice';
@@ -30,7 +30,6 @@ export default function ManageData() {
           text: 'Yes',
           onPress: async () => {
             try {
-              // Create JSON object with all app data
               const exportData = {
                 profile,
                 goals,
@@ -39,20 +38,31 @@ export default function ManageData() {
                 exportDate: new Date().toISOString(),
               };
 
-              // Convert to JSON string
               const jsonString = JSON.stringify(exportData, null, 2);
 
-              // Create temporary file
-              const file = new FileSystem.File(FileSystem.Paths.cache, 'noms-export.json');
-              await file.create({ overwrite: true });
-              file.write(jsonString);
+              if (Platform.OS === 'web') {
+                // Web: create Blob and trigger download
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `noms-export-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              } else {
+                // Native: use FileSystem + Sharing
+                const file = new FileSystem.File(FileSystem.Paths.cache, 'noms-export.json');
+                await file.create({ overwrite: true });
+                file.write(jsonString);
 
-              // Share the file (iOS will show save/share options)
-              await Sharing.shareAsync(file.uri, {
-                mimeType: 'application/json',
-                dialogTitle: 'Export App Data',
-                UTI: 'public.json',
-              });
+                await Sharing.shareAsync(file.uri, {
+                  mimeType: 'application/json',
+                  dialogTitle: 'Export App Data',
+                  UTI: 'public.json',
+                });
+              }
             } catch (error) {
               Alert.alert('Export Failed', 'An error occurred while exporting data.');
               console.error('Export error:', error);
@@ -65,51 +75,99 @@ export default function ManageData() {
 
   const handleImportData = async () => {
     try {
-      // Open document picker for JSON files
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/json',
-        copyToCacheDirectory: true,
-      });
+      if (Platform.OS === 'web') {
+        // Web: use native file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
 
-      if (result.canceled) {
-        return;
-      }
+        input.onchange = async (e: Event) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (!file) return;
 
-      // Read the file content
-      const file = new FileSystem.File(result.assets[0].uri);
-      const fileContent = await file.text();
-      const importedData = JSON.parse(fileContent);
+          const text = await file.text();
+          let importedData: any;
+          try {
+            importedData = JSON.parse(text);
+          } catch {
+            Alert.alert('Invalid File', 'Invalid file type');
+            return;
+          }
 
-      // Validate the imported data structure
-      if (
-        !('profile' in importedData) ||
-        !('goals' in importedData) ||
-        !('catalog' in importedData) ||
-        !('diary' in importedData)
-      ) {
-        Alert.alert('Invalid File', 'Invalid file type');
-        return;
-      }
+          if (
+            !('profile' in importedData) ||
+            !('goals' in importedData) ||
+            !('catalog' in importedData) ||
+            !('diary' in importedData)
+          ) {
+            Alert.alert('Invalid File', 'Invalid file type');
+            return;
+          }
 
-      // Confirm before importing
-      Alert.alert(
-        'Import Data',
-        'This will replace all current app data. Continue?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Import',
-            onPress: async () => {
-              await dispatch(setProfile(importedData.profile));
-              await dispatch(setGoalsAsync(importedData.goals));
-              await dispatch(setCatalog(importedData.catalog));
-              await dispatch(setDiary(importedData.diary));
+          Alert.alert(
+            'Import Data',
+            'This will replace all current app data. Continue?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Import',
+                onPress: async () => {
+                  await dispatch(setProfile(importedData.profile));
+                  await dispatch(setGoalsAsync(importedData.goals));
+                  await dispatch(setCatalog(importedData.catalog));
+                  await dispatch(setDiary(importedData.diary));
+                  Alert.alert('Success', 'Data imported successfully!');
+                },
+              },
+            ]
+          );
+        };
 
-              Alert.alert('Success', 'Data imported successfully!');
+        input.click();
+      } else {
+        // Native: use expo-document-picker
+        const result = await DocumentPicker.getDocumentAsync({
+          type: 'application/json',
+          copyToCacheDirectory: true,
+        });
+
+        if (result.canceled) {
+          return;
+        }
+
+        const file = new FileSystem.File(result.assets[0].uri);
+        const fileContent = await file.text();
+        const importedData = JSON.parse(fileContent);
+
+        if (
+          !('profile' in importedData) ||
+          !('goals' in importedData) ||
+          !('catalog' in importedData) ||
+          !('diary' in importedData)
+        ) {
+          Alert.alert('Invalid File', 'Invalid file type');
+          return;
+        }
+
+        Alert.alert(
+          'Import Data',
+          'This will replace all current app data. Continue?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Import',
+              onPress: async () => {
+                await dispatch(setProfile(importedData.profile));
+                await dispatch(setGoalsAsync(importedData.goals));
+                await dispatch(setCatalog(importedData.catalog));
+                await dispatch(setDiary(importedData.diary));
+
+                Alert.alert('Success', 'Data imported successfully!');
+              },
             },
-          },
-        ]
-      );
+          ]
+        );
+      }
     } catch (error) {
       Alert.alert('Import Failed', 'Invalid file type');
       console.error('Import error:', error);

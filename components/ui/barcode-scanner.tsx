@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Props = {
   visible: boolean;
@@ -8,104 +7,186 @@ type Props = {
   onBarcodeScanned: (barcode: string) => void;
 };
 
+const BarcodeDetector = (typeof window !== 'undefined' && 'BarcodeDetector' in window)
+  ? window.BarcodeDetector as { new (options?: { formats: string[] }): { detect: (image: HTMLVideoElement | HTMLCanvasElement | ImageBitmap) => Promise<{ rawValue: string }[]> } }
+  : null;
+
 export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: Props) {
-  const [hasPermission, setHasPermission] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animFrameRef = useRef<number | null>(null);
   const hasScannedRef = useRef(false);
-  const device = useCameraDevice('back');
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [hasDetector, setHasDetector] = useState(!!BarcodeDetector);
+  const [manualBarcode, setManualBarcode] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (visible) {
-      hasScannedRef.current = false;
+  const stopCamera = useCallback(() => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
     }
-  }, [visible]);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    hasScannedRef.current = false;
+  }, []);
 
-  useEffect(() => {
-    const requestPermissions = async () => {
-      const permission = await Camera.requestCameraPermission();
-      setHasPermission(permission === 'granted');
-      
-      if (permission === 'denied') {
-        Alert.alert(
-          'Camera Permission',
-          'Camera permission is required to scan barcodes. Please enable it in Settings.',
-          [{ text: 'OK', onPress: onClose }]
-        );
+  const startScanning = useCallback(async () => {
+    if (!videoRef.current || !BarcodeDetector) return;
+
+    const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+    const video = videoRef.current;
+
+    const scanFrame = async () => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA && !hasScannedRef.current) {
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0 && barcodes[0].rawValue) {
+            hasScannedRef.current = true;
+            stopCamera();
+            onClose();
+            setTimeout(() => {
+              onBarcodeScanned(barcodes[0].rawValue);
+            }, 100);
+            return;
+          }
+        } catch {
+          // Detection failed for this frame, continue
+        }
       }
+      animFrameRef.current = requestAnimationFrame(scanFrame);
     };
 
-    if (visible) {
-      requestPermissions();
+    animFrameRef.current = requestAnimationFrame(scanFrame);
+  }, [onBarcodeScanned, onClose, stopCamera]);
+
+  const startCamera = useCallback(async () => {
+    setError(null);
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError('Camera API not available in this browser');
+      setHasPermission(false);
+      return;
     }
-  }, [visible, onClose]);
 
-  const codeScanner = useCodeScanner({
-    codeTypes: [
-      'upc-a',
-      'upc-e',
-    ],
-    onCodeScanned: (codes) => {
-      if (codes.length > 0 && codes[0].value && !hasScannedRef.current) {
-        hasScannedRef.current = true;
-        const barcode = codes[0].value;
-        onClose();
-        setTimeout(() => {
-          onBarcodeScanned(barcode);
-        }, 100);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setHasPermission(true);
+        if (BarcodeDetector) {
+          startScanning();
+        }
       }
-    },
-  });
+    } catch {
+      setError('Camera access denied. Please enable camera permissions in your browser settings.');
+      setHasPermission(false);
+    }
+  }, [startScanning]);
 
-  if (!device) {
-    return (
-      <Modal visible={visible} animationType="slide" transparent={false}>
-        <View style={styles.container}>
-          <Text style={styles.errorText}>No camera device found</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-    );
-  }
+  useEffect(() => {
+    if (visible) {
+      if (BarcodeDetector) {
+        startCamera();
+      } else {
+        setHasPermission(true);
+      }
+    } else {
+      stopCamera();
+      setManualBarcode('');
+      setError(null);
+    }
 
-  if (!hasPermission) {
-    return (
-      <Modal visible={visible} animationType="slide" transparent={false}>
-        <View style={styles.container}>
-          <Text style={styles.errorText}>Requesting camera permission...</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-    );
-  }
+    return () => {
+      stopCamera();
+    };
+  }, [visible, startCamera, stopCamera]);
+
+  const handleManualSubmit = () => {
+    const trimmed = manualBarcode.trim();
+    if (trimmed) {
+      onClose();
+      onBarcodeScanned(trimmed);
+    }
+  };
+
+  const handleClose = () => {
+    stopCamera();
+    onClose();
+  };
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
       <View style={styles.container}>
-        <Camera
-          style={styles.camera}
-          device={device}
-          isActive={visible}
-          codeScanner={codeScanner}
-        />
-        <View style={styles.overlay}>
-          <View style={styles.topOverlay} />
-          <View style={styles.middleRow}>
-            <View style={styles.sideOverlay} />
-            <View style={styles.scanArea} />
-            <View style={styles.sideOverlay} />
-          </View>
-          <View style={styles.bottomOverlay}>
-            <Text style={styles.instructionText}>
-              Point camera at a barcode
+        {!BarcodeDetector || !hasDetector ? (
+          <View style={styles.content}>
+            <Text style={styles.title}>Scan Barcode</Text>
+            <Text style={styles.subtitle}>
+              Your browser doesn't support automatic barcode detection. Please enter the barcode number manually.
             </Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Barcode Number</Text>
+              <input
+                type="text"
+                value={manualBarcode}
+                onChange={(e) => setManualBarcode(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
+                placeholder="Enter barcode number"
+                style={styles.nativeInput}
+                autoFocus
+              />
+            </View>
+            <TouchableOpacity style={styles.submitButton} onPress={handleManualSubmit}>
+              <Text style={styles.submitButtonText}>Submit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
               <Text style={styles.closeButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        ) : error ? (
+          <View style={styles.content}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        ) : !hasPermission ? (
+          <View style={styles.content}>
+            <Text style={styles.errorText}>Requesting camera permission...</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              autoPlay
+              style={styles.video}
+            />
+            <View style={styles.overlay}>
+              <View style={styles.topOverlay} />
+              <View style={styles.middleRow}>
+                <View style={styles.sideOverlay} />
+                <View style={styles.scanArea} />
+                <View style={styles.sideOverlay} />
+              </View>
+              <View style={styles.bottomOverlay}>
+                <Text style={styles.instructionText}>Point camera at a barcode</Text>
+                <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+                  <Text style={styles.closeButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </>
+        )}
       </View>
     </Modal>
   );
@@ -116,7 +197,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  camera: {
+  content: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 24,
+    justifyContent: 'center',
+  },
+  video: {
     flex: 1,
   },
   overlay: {
@@ -162,6 +249,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 10,
+    alignItems: 'center',
   },
   closeButtonText: {
     color: '#fff',
@@ -169,9 +257,55 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   errorText: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#333',
+    fontSize: 16,
     textAlign: 'center',
-    marginTop: 100,
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#034ea6',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  submitButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  nativeInput: {
+    width: '100%',
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
   },
 });

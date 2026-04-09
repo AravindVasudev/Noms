@@ -46,6 +46,8 @@ export default function GoalsScreen() {
   };
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
+
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
@@ -70,7 +72,7 @@ export default function GoalsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'web' ? undefined : Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.container}>
             <Text style={styles.title}>Set Daily Goals</Text>
@@ -106,7 +108,7 @@ export default function GoalsScreen() {
             </View>
           </View>
         </ScrollView>
-        {keyboardVisible && (
+        {Platform.OS !== 'web' && keyboardVisible && (
           <View style={[styles.keyboardAccessory, { bottom: keyboardHeight }]}>
             <TouchableOpacity onPress={() => Keyboard.dismiss()} style={styles.doneButton}>
               <Text style={styles.doneText}>Done</Text>
