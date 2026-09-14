@@ -126,7 +126,7 @@ export default function Insights() {
           goal={goals.fat > 0 ? goals.fat : undefined}
           yAxisSuffix=" g"
           width={screenWidth}
-          scrollable={duration === 7}
+          scrollable={duration > 7}
         />
         <LineChartCard
           title={`Last ${selectedDurationLabel} — Carbs`}
@@ -135,7 +135,7 @@ export default function Insights() {
           goal={goals.carbs > 0 ? goals.carbs : undefined}
           yAxisSuffix=" g"
           width={screenWidth}
-          scrollable={duration === 7}
+          scrollable={duration > 7}
         />
       </ScrollView>
     </SafeAreaView>
@@ -143,6 +143,6 @@ export default function Insights() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   scrollContent: { gap: 16, paddingBottom: 24 },
 });

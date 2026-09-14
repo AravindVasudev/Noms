@@ -1,22 +1,21 @@
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import React from 'react';
-
-import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 
 
 export default function TabLayout() {
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
-        <Label>Diary</Label>
-        <Icon sf="book.fill" drawable="custom_android_drawable" />
+        <NativeTabs.Trigger.Label>Diary</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="book.fill" md="book" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="insights">
-        <Icon sf="graph.2d" drawable="custom_settings_drawable" />
-        <Label>Insights</Label>
+        <NativeTabs.Trigger.Icon sf="graph.2d" md="insights" />
+        <NativeTabs.Trigger.Label>Insights</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">
-        <Icon sf="gear" drawable="custom_settings_drawable" />
-        <Label>Settings</Label>
+        <NativeTabs.Trigger.Icon sf="gear" md="settings" />
+        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
