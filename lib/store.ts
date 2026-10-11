@@ -3,6 +3,7 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import catalogReducer from './catalogSlice';
 import diaryReducer from './diarySlice';
 import goalsReducer from './goalsSlice';
+import insightsSettingsReducer from './insightsSettingsSlice';
 import profileReducer from './profileSlice';
 
 const store = configureStore({
@@ -11,6 +12,7 @@ const store = configureStore({
     goals: goalsReducer,
     profile: profileReducer,
     catalog: catalogReducer,
+    insightsSettings: insightsSettingsReducer,
   },
 });
 

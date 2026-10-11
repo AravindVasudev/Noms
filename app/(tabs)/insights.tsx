@@ -1,23 +1,36 @@
 import { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel } from '@/lib/date';
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Dimensions, ScrollView, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DurationPicker from '../../components/ui/duration-picker';
 import LineChartCard from '../../components/ui/line-chart-card';
 import { Nutrition } from '../../lib/diarySlice';
+import { InsightMetricId } from '../../lib/insightsSettingsSlice';
 import { useAppSelector } from '../../lib/store';
 
+type MetricConfig = {
+  id: InsightMetricId;
+  field: keyof Nutrition;
+  title: string;
+  yAxisSuffix: string;
+  goalKey: 'calories' | 'protein' | 'fiber' | 'fat' | 'carbs';
+};
+
+const METRIC_CONFIGS: Record<InsightMetricId, MetricConfig> = {
+  calories: { id: 'calories', field: 'calories', title: 'Calories', yAxisSuffix: ' kcal', goalKey: 'calories' },
+  protein: { id: 'protein', field: 'protein', title: 'Protein', yAxisSuffix: ' g', goalKey: 'protein' },
+  fiber: { id: 'fiber', field: 'fiber', title: 'Fiber', yAxisSuffix: ' g', goalKey: 'fiber' },
+  fat: { id: 'fat', field: 'fat', title: 'Fats', yAxisSuffix: ' g', goalKey: 'fat' },
+  carbs: { id: 'carbs', field: 'carbs', title: 'Carbs', yAxisSuffix: ' g', goalKey: 'carbs' },
+};
+
 export default function Insights() {
-  const [labels, setLabels] = useState<string[]>([]);
-  const [caloriesData, setCaloriesData] = useState<number[]>([]);
-  const [proteinData, setProteinData] = useState<number[]>([]);
-  const [fiberData, setFiberData] = useState<number[]>([]);
-  const [fatsData, setFatsData] = useState<number[]>([]);
-  const [carbsData, setCarbsData] = useState<number[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const [duration, setDuration] = useState<number>(7);
   const diary = useAppSelector(state => state.diary.diary);
   const goalsStrings = useAppSelector(state => state.goals);
+  const insightsSettings = useAppSelector(state => state.insightsSettings);
 
   const goals = useMemo(() => ({
     calories: parseFloat(goalsStrings.calories) || 0,
@@ -26,6 +39,11 @@ export default function Insights() {
     fat: parseFloat(goalsStrings.fat) || 0,
     carbs: parseFloat(goalsStrings.carbs) || 0,
   }), [goalsStrings]);
+
+  const visibleMetrics = useMemo(
+    () => insightsSettings.order.filter((id) => insightsSettings.visible[id]).map((id) => METRIC_CONFIGS[id]),
+    [insightsSettings],
+  );
 
   const durationOptions = useMemo(
     () =>
@@ -42,9 +60,11 @@ export default function Insights() {
     [duration, durationOptions],
   );
 
-  useEffect(() => {
-    const dayKeys = getLastNDaysKeys(duration);
+  const dayKeys = useMemo(() => getLastNDaysKeys(duration), [duration]);
 
+  const labels = useMemo(() => dayKeys.map((k) => keyToWeekdayLabel(k)), [dayKeys]);
+
+  const series = useMemo(() => {
     const aggregateField = (field: keyof Nutrition) =>
       dayKeys.map((key) =>
         diary.reduce((sum, r: Nutrition) => {
@@ -56,32 +76,22 @@ export default function Insights() {
         }, 0),
       );
 
-    const calories = aggregateField('calories');
-    const protein = aggregateField('protein');
-    const fiber = aggregateField('fiber');
-    const fats = aggregateField('fat');
-    const carbs = aggregateField('carbs');
+    const round = (n: number) => Math.round(n * 100) / 100;
 
-    const prettyLabels = dayKeys.map((k) => keyToWeekdayLabel(k));
-
-    setLabels(prettyLabels);
-    setCaloriesData(calories.map((n) => Math.round(n * 100) / 100));
-    setProteinData(protein.map((n) => Math.round(n * 100) / 100));
-    setFiberData(fiber.map((n) => Math.round(n * 100) / 100));
-    setFatsData(fats.map((n) => Math.round(n * 100) / 100));
-    setCarbsData(carbs.map((n) => Math.round(n * 100) / 100));
-    setLoading(false);
-  }, [diary, duration]);
+    const result: Record<InsightMetricId, number[]> = {
+      calories: [],
+      protein: [],
+      fiber: [],
+      fat: [],
+      carbs: [],
+    };
+    for (const metric of visibleMetrics) {
+      result[metric.id] = aggregateField(metric.field).map(round);
+    }
+    return result;
+  }, [dayKeys, diary, visibleMetrics]);
 
   const screenWidth = Dimensions.get('window').width - 32;
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="small" />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -93,51 +103,31 @@ export default function Insights() {
           onChange={setDuration}
           style={{ marginBottom: 12, zIndex: 10 }}
         />
-        <LineChartCard
-          title={`Last ${selectedDurationLabel} — Calories`}
-          labels={labels}
-          dataPoints={caloriesData}
-          goal={goals.calories > 0 ? goals.calories : undefined}
-          yAxisSuffix=" kcal"
-          width={screenWidth}
-          scrollable={duration > 7}
-        />
-        <LineChartCard
-          title={`Last ${selectedDurationLabel} — Protein`}
-          labels={labels}
-          dataPoints={proteinData}
-          goal={goals.protein > 0 ? goals.protein : undefined}
-          yAxisSuffix=" g"
-          width={screenWidth}
-          scrollable={duration > 7}
-        />
-        <LineChartCard
-          title={`Last ${selectedDurationLabel} — Fiber`}
-          labels={labels}
-          dataPoints={fiberData}
-          goal={goals.fiber > 0 ? goals.fiber : undefined}
-          yAxisSuffix=" g"
-          width={screenWidth}
-          scrollable={duration > 7}
-        />
-        <LineChartCard
-          title={`Last ${selectedDurationLabel} — Fats`}
-          labels={labels}
-          dataPoints={fatsData}
-          goal={goals.fat > 0 ? goals.fat : undefined}
-          yAxisSuffix=" g"
-          width={screenWidth}
-          scrollable={duration > 7}
-        />
-        <LineChartCard
-          title={`Last ${selectedDurationLabel} — Carbs`}
-          labels={labels}
-          dataPoints={carbsData}
-          goal={goals.carbs > 0 ? goals.carbs : undefined}
-          yAxisSuffix=" g"
-          width={screenWidth}
-          scrollable={duration > 7}
-        />
+        {visibleMetrics.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No graphs enabled</Text>
+            <Text style={styles.emptySubtitle}>Enable the graphs you want to see in Insights.</Text>
+            <Pressable
+              onPress={() => router.push('/customize-insights')}
+              style={({ pressed }) => [styles.emptyButton, pressed && styles.emptyButtonPressed]}
+            >
+              <Text style={styles.emptyButtonText}>Customize Insights</Text>
+            </Pressable>
+          </View>
+        ) : (
+          visibleMetrics.map((metric) => (
+            <LineChartCard
+              key={metric.id}
+              title={`Last ${selectedDurationLabel} — ${metric.title}`}
+              labels={labels}
+              dataPoints={series[metric.id]}
+              goal={goals[metric.goalKey] > 0 ? goals[metric.goalKey] : undefined}
+              yAxisSuffix={metric.yAxisSuffix}
+              width={screenWidth}
+              scrollable={duration > 7}
+            />
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -146,4 +136,10 @@ export default function Insights() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   scrollContent: { gap: 16, paddingBottom: 24 },
+  emptyState: { alignItems: 'center', paddingVertical: 48, gap: 8 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  emptySubtitle: { fontSize: 14, color: '#636366', textAlign: 'center' },
+  emptyButton: { marginTop: 12, backgroundColor: '#007AFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20 },
+  emptyButtonPressed: { opacity: 0.85 },
+  emptyButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

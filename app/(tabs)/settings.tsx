@@ -16,6 +16,10 @@ export default function Settings() {
     router.push('/manage-data');
   };
 
+  const handleCustomizeInsights = () => {
+    router.push('/customize-insights');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ProfileCard />
@@ -23,6 +27,9 @@ export default function Settings() {
       {/* Settings Menu */}
       <View style={styles.section}>
         <SettingsItem title="Set Goals" onPress={handleSetGoals} />
+      </View>
+      <View style={styles.section}>
+        <SettingsItem title="Customize Insights" onPress={handleCustomizeInsights} />
       </View>
       <View style={styles.section}>
         <SettingsItem title="Manage Data" onPress={handleManageData} />

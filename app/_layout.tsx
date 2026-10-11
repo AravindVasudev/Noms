@@ -10,6 +10,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { initializeCatalog } from '@/lib/catalogSlice';
 import { initializeDiary } from '@/lib/diarySlice';
 import { initializeGoals } from '@/lib/goalsSlice';
+import { initializeInsightsSettings } from '@/lib/insightsSettingsSlice';
 import { initializeProfile } from '@/lib/profileSlice';
 import store, { useAppDispatch, useAppSelector } from '@/lib/store';
 
@@ -30,6 +31,7 @@ function AppContent() {
         dispatch(initializeDiary()),
         dispatch(initializeGoals()),
         dispatch(initializeCatalog()),
+        dispatch(initializeInsightsSettings()),
       ]);
       setIsInitialized(true);
     };
@@ -51,6 +53,7 @@ function AppContent() {
           <Stack.Screen name="goals" options={{ headerShown: false }} />
           <Stack.Screen name="search" options={{ headerShown: false }} />
           <Stack.Screen name="manage-data" options={{ headerShown: false }} />
+          <Stack.Screen name="customize-insights" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
         {!signedUp && <Redirect href="/signup" />}

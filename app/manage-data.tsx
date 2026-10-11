@@ -9,6 +9,7 @@ import SettingsItem from '../components/ui/settings-item';
 import { clearAllAsync as clearCatalog, setCatalog } from '../lib/catalogSlice';
 import { clearAllAsync as clearDiary, setDiary } from '../lib/diarySlice';
 import { clearAllAsync as clearGoals, setGoalsAsync } from '../lib/goalsSlice';
+import { clearAllAsync as clearInsightsSettings, setInsightsSettings } from '../lib/insightsSettingsSlice';
 import { clearAllAsync as clearProfile, setProfile } from '../lib/profileSlice';
 import { useAppDispatch, useAppSelector } from '../lib/store';
 
@@ -19,6 +20,7 @@ export default function ManageData() {
   const goals = useAppSelector((state) => state.goals);
   const catalog = useAppSelector((state) => state.catalog);
   const diary = useAppSelector((state) => state.diary);
+  const insightsSettings = useAppSelector((state) => state.insightsSettings);
 
   const handleExportData = () => {
     Alert.alert(
@@ -36,6 +38,7 @@ export default function ManageData() {
                 goals,
                 catalog,
                 diary,
+                insightsSettings,
                 exportDate: new Date().toISOString(),
               };
 
@@ -104,6 +107,9 @@ export default function ManageData() {
               await dispatch(setGoalsAsync(importedData.goals));
               await dispatch(setCatalog(importedData.catalog));
               await dispatch(setDiary(importedData.diary));
+              if ('insightsSettings' in importedData) {
+                await dispatch(setInsightsSettings(importedData.insightsSettings));
+              }
 
               Alert.alert('Success', 'Data imported successfully!');
             },
@@ -131,6 +137,7 @@ export default function ManageData() {
             await dispatch(clearCatalog());
             await dispatch(clearGoals());
             await dispatch(clearProfile());
+            await dispatch(clearInsightsSettings());
 
             Alert.alert('Data Cleared', 'All app data has been cleared.');
             router.replace('/signup');
