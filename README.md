@@ -32,19 +32,19 @@ $ npm run ios # Start dev run on iOS.
 - [x] Add barcode scanning option: items in catalog can be linked to a barcode value and used to quick add entries.
 - [x] Implement option to import data.
 - [x] Implement option to export data.
-- [ ] Allow selecting graphs in insights. Make it a customizable dashboard.
+- [x] Allow selecting graphs in insights. Make it a customizable dashboard.
 - [ ] Read Apple Health data for calories burned, weight, etc to add new graph types for insights.
 - [ ] Add option to edit entries in diary and catalog.
 - [x] Add swipe option to date picker in the diary screen. swipe is more intuitive.
 - [ ] For fortnight and month selection, instead of supporting side scroll, maybe sample the points and create a visual that fits in the screen.
 - [x] Catalog entries should indicate if they have a barcode associated.
-- [ ] Add serving size and quantity options. I should be able to say apple serving: 1 apple, quantity: 2. UX should be simple to pick.
+- [x] Add serving size and quantity options. I should be able to say apple serving: 1 apple, quantity: 2. UX should be simple to pick.
 - [ ] Fix gap between keyboard and done button when keyboard is open.
 - [x] Fix "clear app data" to clear all app data.
 - [x] Fix "clear app data" to have a warning pop-up.
-- [ ] Clean up the logo, looks off.
+- [x] Clean up the logo, looks off.
 - [ ] Clean the UI for sign up flow.
-- [ ] Add flow to suggest goals based on standard TDEE questionaire.
+- [x] Add flow to suggest goals based on standard TDEE questionaire.
 - [ ] Tech Debt
   - [ ] Only load last X days of data into memory and load remaining on-demand.
   - [ ] Pre-aggregate old data and store it in a table to avoid re-computation.

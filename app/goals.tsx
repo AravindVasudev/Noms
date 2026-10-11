@@ -75,6 +75,10 @@ export default function GoalsScreen() {
           <View style={styles.container}>
             <Text style={styles.title}>Set Daily Goals</Text>
 
+            <TouchableOpacity style={styles.tdeeButton} onPress={() => router.push('/tdee-calculator')}>
+              <Text style={styles.tdeeText}>Use TDEE Calculator</Text>
+            </TouchableOpacity>
+
             <View style={styles.fieldRow}>
               <Text style={[styles.label, styles.labelInline]}>Calories</Text>
               <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.calories} onChangeText={(v) => setLocalGoals((p) => ({ ...p, calories: v }))} />
@@ -129,6 +133,8 @@ const styles = StyleSheet.create({
   fieldRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 8 },
   labelInline: { marginTop: 0, marginBottom: 0, marginRight: 12, minWidth: 90 },
   inputInline: { flex: 1, paddingVertical: 10 },
+  tdeeButton: { backgroundColor: '#007AFF', borderRadius: 20, paddingVertical: 12, alignItems: 'center', marginBottom: 12 },
+  tdeeText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   keyboardAccessory: {
     position: 'absolute',
     left: 0,
