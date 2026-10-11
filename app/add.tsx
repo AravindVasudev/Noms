@@ -1,6 +1,7 @@
 import { addCatalogItemAsync } from '@/lib/catalogSlice';
 import { addEntryAsync } from '@/lib/diarySlice';
 import { useAppDispatch } from '@/lib/store';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import React, { useEffect, useState } from 'react';
@@ -25,6 +26,14 @@ export default function AddScreen() {
     fiber: '',
     date: paramDate ? new Date(paramDate as string) : today,
   });
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
 
   const onAdd = () => {
     const name = (nutrition.name || '').trim() || 'Quick Add';
@@ -60,7 +69,7 @@ export default function AddScreen() {
     
     Keyboard.dismiss();
     router.dismissAll();
-    router.replace('/(tabs)/');
+    router.replace('/(tabs)');
   };
 
   useEffect(() => {
@@ -91,6 +100,19 @@ export default function AddScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.container}>
+            <View style={styles.header}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={handleBack}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+              >
+                <Ionicons name="chevron-back" size={22} color="#007AFF" />
+                <Text style={styles.backText}>Back</Text>
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>Add Item</Text>
+              <View style={styles.headerSpacer} />
+            </View>
             <Text style={styles.title}>Add Entry</Text>
             <View style={styles.noteContainer}>
               <Text style={styles.note}>
@@ -146,7 +168,7 @@ export default function AddScreen() {
             </View>
 
             <View style={styles.buttons}>
-              <Button title="Cancel" onPress={() => router.back()} />
+              <Button title="Cancel" onPress={handleBack} />
               <Button title="Add" onPress={onAdd} />
             </View>
           </View>
@@ -167,6 +189,30 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, justifyContent: 'center', paddingBottom: 100 },
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 4,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 70,
+  },
+  backText: {
+    color: '#007AFF',
+    fontSize: 17,
+    marginLeft: -4,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#000',
+  },
+  headerSpacer: {
+    minWidth: 70,
+  },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: '#034ea6' },
   noteContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   note: { fontSize: 12, color: '#888' },

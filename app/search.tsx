@@ -5,6 +5,7 @@ import catalogStore, { CatalogRow } from '@/lib/catalog-store';
 import { addEntryAsync } from '@/lib/diarySlice';
 import { DEFAULT_QUANTITY } from '@/lib/quantity';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -22,6 +23,14 @@ export default function SearchScreen() {
   const [scannerVisible, setScannerVisible] = useState(false);
   const [pendingBarcodeItem, setPendingBarcodeItem] = useState<CatalogRow | null>(null);
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   const handleBarcodeScanned = async (barcode: string) => {
     try {
       const catalogItem = await catalogStore.getEntryByBarcode(barcode);
@@ -29,7 +38,7 @@ export default function SearchScreen() {
         setScannerVisible(false);
         setPendingBarcodeItem(catalogItem);
       } else {
-        router.replace({ pathname: '/add', params: { ...paramDate ? { date: paramDate } : {}, barcode } });
+        router.push({ pathname: '/add', params: { ...paramDate ? { date: paramDate } : {}, barcode } });
       }
     } catch (error) {
       console.error('Barcode scan error:', error);
@@ -51,7 +60,7 @@ export default function SearchScreen() {
       date,
     }));
     setPendingBarcodeItem(null);
-    router.replace('/(tabs)/');
+    router.replace('/(tabs)');
   };
 
   const isSearching = searchQuery.trim().length > 0;
@@ -93,6 +102,19 @@ export default function SearchScreen() {
     <SafeAreaView style={styles.safeArea}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBack}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={22} color="#007AFF" />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Catalog</Text>
+        <View style={styles.headerSpacer} />
+      </View>
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -109,7 +131,7 @@ export default function SearchScreen() {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => router.replace({ pathname: '/add', params: paramDate ? { date: paramDate } : {} })}
+          onPress={() => router.push({ pathname: '/add', params: paramDate ? { date: paramDate } : {} })}
         >
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
@@ -154,6 +176,32 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 70,
+  },
+  backText: {
+    color: '#007AFF',
+    fontSize: 17,
+    marginLeft: -4,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#000',
+  },
+  headerSpacer: {
+    minWidth: 70,
   },
   searchContainer: {
     flexDirection: 'row',
