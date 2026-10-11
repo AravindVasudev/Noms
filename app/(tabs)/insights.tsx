@@ -51,7 +51,8 @@ export default function Insights() {
           const rKey = formatDateKey(r.date);
           if (rKey !== key) return sum;
           const val = r[field];
-          return sum + (val == null ? 0 : Number(val) || 0);
+          if (typeof val !== 'number') return sum;
+          return sum + (Number(val) || 0) * (r.quantity ?? 1.0);
         }, 0),
       );
 

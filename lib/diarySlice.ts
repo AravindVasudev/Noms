@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import journalStore from './journal-store';
+import { DEFAULT_QUANTITY, normalizeQuantity } from './quantity';
 
 export type Nutrition = {
   id?: number;
@@ -9,6 +10,7 @@ export type Nutrition = {
   protein: number | null;
   carbs: number | null;
   fiber: number | null;
+  quantity: number;
   date: Date;
 };
 
@@ -18,8 +20,9 @@ const initializeDiary = createAsyncThunk('diary/initialize', async () => {
 });
 
 const addEntryAsync = createAsyncThunk('diary/addEntry', async (entry: Omit<Nutrition, 'id'>) => {
-  const insertId = await journalStore.insertEntry(entry as any);
-  return { ...entry, id: insertId } as Nutrition;
+  const normalized = { ...entry, quantity: normalizeQuantity((entry as any).quantity ?? DEFAULT_QUANTITY) } as Omit<Nutrition, 'id'>;
+  const insertId = await journalStore.insertEntry(normalized as any);
+  return { ...normalized, id: insertId } as Nutrition;
 });
 
 const removeEntryAsync = createAsyncThunk('diary/removeEntry', async (id: number) => {
@@ -40,8 +43,11 @@ const setDiary = createAsyncThunk('diary/setDiary', async (data: { diary: Nutrit
   for (const entry of data.diary) {
     // Remove id field as it will be auto-generated
     const { id, ...entryWithoutId } = entry;
-    const insertId = await journalStore.insertEntry(entryWithoutId as any);
-    insertedEntries.push({ ...entryWithoutId, id: insertId });
+    const normalized = { ...entryWithoutId, quantity: normalizeQuantity((entryWithoutId as any).quantity) } as Omit<Nutrition, 'id'>;
+    // Backfill legacy dates stored as ISO strings.
+    const date = normalized.date instanceof Date ? normalized.date : new Date(normalized.date as any);
+    const insertId = await journalStore.insertEntry({ ...normalized, date } as any);
+    insertedEntries.push({ ...normalized, date, id: insertId });
   }
   return insertedEntries;
 });

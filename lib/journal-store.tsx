@@ -1,5 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 
+import { normalizeQuantity } from './quantity';
+
 type NutritionRow = {
   id: number;
   name: string;
@@ -8,6 +10,7 @@ type NutritionRow = {
   protein: number | null;
   carbs: number | null;
   fiber: number | null;
+  quantity: number;
   date: Date;
 };
 
@@ -31,9 +34,15 @@ class JournalStore {
       protein REAL,
       carbs REAL,
       fiber REAL,
+      quantity REAL NOT NULL DEFAULT 1.0,
       date TEXT
     )`
     );
+    // Migrate pre-quantity installs.
+    const columns: any[] = await db.getAllAsync('PRAGMA table_info(nutrition)');
+    if (!columns.some((c) => c.name === 'quantity')) {
+      await db.execAsync('ALTER TABLE nutrition ADD COLUMN quantity REAL NOT NULL DEFAULT 1.0');
+    }
   }
 
   async getAllEntries(): Promise<NutritionRow[]> {
@@ -47,6 +56,7 @@ class JournalStore {
       protein: r.protein == null ? null : Number(r.protein),
       carbs: r.carbs == null ? null : Number(r.carbs),
       fiber: r.fiber == null ? null : Number(r.fiber),
+      quantity: normalizeQuantity(r.quantity),
       date: new Date(r.date),
     }));
   }
@@ -59,11 +69,12 @@ class JournalStore {
       entry.protein,
       entry.carbs,
       entry.fiber,
+      normalizeQuantity((entry as any).quantity),
       typeof entry.date === 'string' ? entry.date : entry.date.toISOString(),
     ];
     const db = await this.getDb();
     const res = await db.runAsync(
-      'INSERT INTO nutrition (name, calories, fat, protein, carbs, fiber, date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO nutrition (name, calories, fat, protein, carbs, fiber, quantity, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       params
     );
     return res.lastInsertRowId;

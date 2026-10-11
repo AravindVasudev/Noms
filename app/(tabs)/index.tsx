@@ -20,11 +20,12 @@ export default function Diary() {
 
   const totals = filteredDiary.reduce(
     (acc, cur) => {
-      acc.calories += typeof cur.calories === 'number' ? cur.calories : 0;
-      acc.protein += typeof cur.protein === 'number' ? cur.protein : 0;
-      acc.fat += typeof cur.fat === 'number' ? cur.fat : 0;
-      acc.carbs += typeof cur.carbs === 'number' ? cur.carbs : 0;
-      acc.fiber += typeof cur.fiber === 'number' ? cur.fiber : 0;
+      const qty = cur.quantity ?? 1.0;
+      acc.calories += (typeof cur.calories === 'number' ? cur.calories : 0) * qty;
+      acc.protein += (typeof cur.protein === 'number' ? cur.protein : 0) * qty;
+      acc.fat += (typeof cur.fat === 'number' ? cur.fat : 0) * qty;
+      acc.carbs += (typeof cur.carbs === 'number' ? cur.carbs : 0) * qty;
+      acc.fiber += (typeof cur.fiber === 'number' ? cur.fiber : 0) * qty;
       return acc;
     },
     { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 }

@@ -1,13 +1,15 @@
 import { CatalogRow } from '@/lib/catalog-store';
 import { removeCatalogItemAsync } from '@/lib/catalogSlice';
 import { addEntryAsync } from '@/lib/diarySlice';
+import { DEFAULT_QUANTITY } from '@/lib/quantity';
 import { useAppDispatch } from '@/lib/store';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import React from 'react';
+import React, { useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+import QuantityModal from './quantity-modal';
 
 type Props = {
   items: CatalogRow[];
@@ -17,18 +19,26 @@ type Props = {
 export default function CatalogEntries({ items, date }: Props) {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const [pendingItem, setPendingItem] = useState<CatalogRow | null>(null);
 
   const handleItemPress = (item: CatalogRow) => {
+    setPendingItem(item);
+  };
+
+  const handleQuantityConfirm = (quantity: number) => {
+    if (!pendingItem) return;
     const entryDate = date || new Date();
-    dispatch(addEntryAsync({ 
-      name: item.name, 
-      calories: item.calories, 
-      fat: item.fat, 
-      protein: item.protein, 
-      carbs: item.carbs, 
-      fiber: item.fiber, 
-      date: entryDate 
+    dispatch(addEntryAsync({
+      name: pendingItem.name,
+      calories: pendingItem.calories,
+      fat: pendingItem.fat,
+      protein: pendingItem.protein,
+      carbs: pendingItem.carbs,
+      fiber: pendingItem.fiber,
+      quantity: quantity ?? DEFAULT_QUANTITY,
+      date: entryDate
     }));
+    setPendingItem(null);
     router.back();
   };
 
@@ -50,6 +60,7 @@ export default function CatalogEntries({ items, date }: Props) {
   };
 
   return (
+    <>
     <FlatList
       data={items}
       keyExtractor={(_, index) => index.toString()}
@@ -84,6 +95,14 @@ export default function CatalogEntries({ items, date }: Props) {
         );
       }}
     />
+    <QuantityModal
+      key={pendingItem ? `${pendingItem.id ?? pendingItem.name}-${pendingItem.barcode ?? ''}` : 'closed'}
+      visible={pendingItem != null}
+      itemName={(pendingItem?.name || '').trim() || 'Quick Add'}
+      onConfirm={handleQuantityConfirm}
+      onCancel={() => setPendingItem(null)}
+    />
+    </>
   );
 }
 

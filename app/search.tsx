@@ -1,7 +1,9 @@
 import BarcodeScanner from '@/components/ui/barcode-scanner';
 import CatalogEntries from '@/components/ui/catalog-entries';
-import catalogStore from '@/lib/catalog-store';
+import QuantityModal from '@/components/ui/quantity-modal';
+import catalogStore, { CatalogRow } from '@/lib/catalog-store';
 import { addEntryAsync } from '@/lib/diarySlice';
+import { DEFAULT_QUANTITY } from '@/lib/quantity';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -18,22 +20,14 @@ export default function SearchScreen() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [scannerVisible, setScannerVisible] = useState(false);
+  const [pendingBarcodeItem, setPendingBarcodeItem] = useState<CatalogRow | null>(null);
 
   const handleBarcodeScanned = async (barcode: string) => {
     try {
       const catalogItem = await catalogStore.getEntryByBarcode(barcode);
       if (catalogItem) {
-        const date = paramDate ? new Date(paramDate as string) : new Date();
-        dispatch(addEntryAsync({
-          name: catalogItem.name,
-          calories: catalogItem.calories || 0,
-          fat: catalogItem.fat,
-          protein: catalogItem.protein,
-          carbs: catalogItem.carbs,
-          fiber: catalogItem.fiber,
-          date,
-        }));
-        router.replace('/(tabs)/');
+        setScannerVisible(false);
+        setPendingBarcodeItem(catalogItem);
       } else {
         router.replace({ pathname: '/add', params: { ...paramDate ? { date: paramDate } : {}, barcode } });
       }
@@ -41,6 +35,23 @@ export default function SearchScreen() {
       console.error('Barcode scan error:', error);
       Alert.alert('Error', `Failed to process barcode: ${error instanceof Error ? error.message : String(error)}`);
     }
+  };
+
+  const handleBarcodeQuantityConfirm = (quantity: number) => {
+    if (!pendingBarcodeItem) return;
+    const date = paramDate ? new Date(paramDate as string) : new Date();
+    dispatch(addEntryAsync({
+      name: pendingBarcodeItem.name,
+      calories: pendingBarcodeItem.calories || 0,
+      fat: pendingBarcodeItem.fat,
+      protein: pendingBarcodeItem.protein,
+      carbs: pendingBarcodeItem.carbs,
+      fiber: pendingBarcodeItem.fiber,
+      quantity: quantity ?? DEFAULT_QUANTITY,
+      date,
+    }));
+    setPendingBarcodeItem(null);
+    router.replace('/(tabs)/');
   };
 
   const filteredCatalog = useMemo(() => {
@@ -124,6 +135,13 @@ export default function SearchScreen() {
         visible={scannerVisible} 
         onClose={() => setScannerVisible(false)} 
         onBarcodeScanned={handleBarcodeScanned}
+      />
+      <QuantityModal
+        key={pendingBarcodeItem ? `${pendingBarcodeItem.id ?? pendingBarcodeItem.name}-${pendingBarcodeItem.barcode ?? ''}` : 'closed'}
+        visible={pendingBarcodeItem != null}
+        itemName={(pendingBarcodeItem?.name || '').trim() || 'Scanned item'}
+        onConfirm={handleBarcodeQuantityConfirm}
+        onCancel={() => setPendingBarcodeItem(null)}
       />
     </SafeAreaView>
   );

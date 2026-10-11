@@ -51,7 +51,7 @@ export default function AddScreen() {
     const carbsNum = nutrition.carbs.trim() === '' ? null : parseInt(nutrition.carbs, 10);
     const fiberNum = nutrition.fiber.trim() === '' ? null : parseInt(nutrition.fiber, 10);
 
-    dispatch(addEntryAsync({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum, date: nutrition.date }));
+    dispatch(addEntryAsync({ name, calories: caloriesNum, fat: fatNum, protein: proteinNum, carbs: carbsNum, fiber: fiberNum, quantity: 1.0, date: nutrition.date }));
     
     // Add to catalog if name is provided (not just "Quick Add")
     if ((nutrition.name || '').trim().length > 0) {

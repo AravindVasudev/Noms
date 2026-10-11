@@ -1,5 +1,6 @@
 import { formatDateKey } from '@/lib/date';
 import { Nutrition, removeEntryAsync } from '@/lib/diarySlice';
+import { formatQuantity } from '@/lib/quantity';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import React, { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
@@ -43,15 +44,17 @@ export default function JournalEntries({ selectedDate }: Props) {
         keyExtractor={(_, index) => index.toString()}
         renderItem={({ item }) => {
           const name = (item.name || '').trim() || 'Quick Add';
-          const calories = typeof item.calories === 'number' ? item.calories.toString() : '-';
-          const fat = typeof item.fat === 'number' ? item.fat.toString() : '-';
-          const carbs = typeof item.carbs === 'number' ? item.carbs.toString() : '-';
-          const protein = typeof item.protein === 'number' ? item.protein.toString() : '-';
-          const fiber = typeof item.fiber === 'number' ? item.fiber.toString() : '-';
+          const qty = item.quantity ?? 1.0;
+          const scaled = (v: number | null) => v == null ? '-' : String(Math.round(v * qty * 100) / 100);
+          const calories = scaled(item.calories);
+          const fat = scaled(item.fat);
+          const carbs = scaled(item.carbs);
+          const protein = scaled(item.protein);
+          const fiber = scaled(item.fiber);
           return (
             <Swipeable renderRightActions={renderRight(item)}>
               <View style={styles.item}>
-                <Text style={styles.name}>{name}</Text>
+                <Text style={styles.name}>{name} × {formatQuantity(qty)}</Text>
                 <Text style={styles.calories}>{calories} Cal</Text>
                 <Text style={styles.details}>
                   (F: {fat}g  C: {carbs}g  P: {protein}g  Fi: {fiber}g)
