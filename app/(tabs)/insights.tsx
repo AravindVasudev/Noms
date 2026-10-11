@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DurationPicker from '../../components/ui/duration-picker';
+import AverageCard from '../../components/ui/average-card';
 import LineChartCard from '../../components/ui/line-chart-card';
 import { Nutrition } from '../../lib/diarySlice';
 import { InsightMetricId } from '../../lib/insightsSettingsSlice';
@@ -14,16 +15,25 @@ type MetricConfig = {
   field: keyof Nutrition;
   title: string;
   yAxisSuffix: string;
+  unit: string;
   goalKey: 'calories' | 'protein' | 'fiber' | 'fat' | 'carbs';
+  overIsGood: boolean;
 };
 
 const METRIC_CONFIGS: Record<InsightMetricId, MetricConfig> = {
-  calories: { id: 'calories', field: 'calories', title: 'Calories', yAxisSuffix: ' kcal', goalKey: 'calories' },
-  protein: { id: 'protein', field: 'protein', title: 'Protein', yAxisSuffix: ' g', goalKey: 'protein' },
-  fiber: { id: 'fiber', field: 'fiber', title: 'Fiber', yAxisSuffix: ' g', goalKey: 'fiber' },
-  fat: { id: 'fat', field: 'fat', title: 'Fats', yAxisSuffix: ' g', goalKey: 'fat' },
-  carbs: { id: 'carbs', field: 'carbs', title: 'Carbs', yAxisSuffix: ' g', goalKey: 'carbs' },
+  calories: { id: 'calories', field: 'calories', title: 'Calories', yAxisSuffix: ' kcal', unit: 'kcal', goalKey: 'calories', overIsGood: false },
+  protein: { id: 'protein', field: 'protein', title: 'Protein', yAxisSuffix: ' g', unit: 'g', goalKey: 'protein', overIsGood: true },
+  fiber: { id: 'fiber', field: 'fiber', title: 'Fiber', yAxisSuffix: ' g', unit: 'g', goalKey: 'fiber', overIsGood: true },
+  fat: { id: 'fat', field: 'fat', title: 'Fats', yAxisSuffix: ' g', unit: 'g', goalKey: 'fat', overIsGood: false },
+  carbs: { id: 'carbs', field: 'carbs', title: 'Carbs', yAxisSuffix: ' g', unit: 'g', goalKey: 'carbs', overIsGood: false },
 };
+
+// Fixed aggregate windows, independent of the Duration picker.
+const AVERAGE_WINDOWS = [
+  { periodLabel: 'Week', days: 7 },
+  { periodLabel: 'Fortnight', days: 14 },
+  { periodLabel: 'Month', days: 30 },
+];
 
 export default function Insights() {
   const router = useRouter();
@@ -91,6 +101,40 @@ export default function Insights() {
     return result;
   }, [dayKeys, diary, visibleMetrics]);
 
+  // Period averages: daily mean over logged days for fixed Week/Fortnight/Month
+  // windows. Independent of the Duration picker.
+  const averages = useMemo(() => {
+    const round = (n: number) => Math.round(n * 100) / 100;
+
+    const result: Record<InsightMetricId, (number | null)[]> = {
+      calories: [],
+      protein: [],
+      fiber: [],
+      fat: [],
+      carbs: [],
+    };
+    for (const metric of visibleMetrics) {
+      result[metric.id] = AVERAGE_WINDOWS.map(({ days }) => {
+        const keys = getLastNDaysKeys(days);
+        let total = 0;
+        let loggedDays = 0;
+        for (const key of keys) {
+          let hasEntry = false;
+          for (const r of diary) {
+            if (formatDateKey(r.date) !== key) continue;
+            hasEntry = true;
+            const val = r[metric.field];
+            if (typeof val !== 'number') continue;
+            total += (Number(val) || 0) * (r.quantity ?? 1.0);
+          }
+          if (hasEntry) loggedDays += 1;
+        }
+        return loggedDays === 0 ? null : round(total / loggedDays);
+      });
+    }
+    return result;
+  }, [diary, visibleMetrics]);
+
   const screenWidth = Dimensions.get('window').width - 32;
 
   return (
@@ -115,18 +159,37 @@ export default function Insights() {
             </Pressable>
           </View>
         ) : (
-          visibleMetrics.map((metric) => (
-            <LineChartCard
-              key={metric.id}
-              title={`Last ${selectedDurationLabel} — ${metric.title}`}
-              labels={labels}
-              dataPoints={series[metric.id]}
-              goal={goals[metric.goalKey] > 0 ? goals[metric.goalKey] : undefined}
-              yAxisSuffix={metric.yAxisSuffix}
-              width={screenWidth}
-              scrollable={duration > 7}
-            />
-          ))
+          <>
+            {visibleMetrics.map((metric) => (
+              <LineChartCard
+                key={metric.id}
+                title={`Last ${selectedDurationLabel} — ${metric.title}`}
+                labels={labels}
+                dataPoints={series[metric.id]}
+                goal={goals[metric.goalKey] > 0 ? goals[metric.goalKey] : undefined}
+                yAxisSuffix={metric.yAxisSuffix}
+                width={screenWidth}
+                scrollable={duration > 7}
+              />
+            ))}
+            <View style={styles.averagesHeader}>
+              <Text style={styles.averagesTitle}>Period Averages</Text>
+              <Text style={styles.averagesSubtitle}>Daily average over logged days</Text>
+            </View>
+            {visibleMetrics.map((metric) => (
+              <AverageCard
+                key={`avg-${metric.id}`}
+                title={`${metric.title} Average`}
+                unit={metric.unit}
+                overIsGood={metric.overIsGood}
+                rows={AVERAGE_WINDOWS.map((window, index) => ({
+                  periodLabel: window.periodLabel,
+                  average: averages[metric.id][index] ?? null,
+                  goal: goals[metric.goalKey],
+                }))}
+              />
+            ))}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -142,4 +205,7 @@ const styles = StyleSheet.create({
   emptyButton: { marginTop: 12, backgroundColor: '#007AFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20 },
   emptyButtonPressed: { opacity: 0.85 },
   emptyButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  averagesHeader: { marginTop: 8, gap: 2 },
+  averagesTitle: { fontSize: 20, fontWeight: '700', color: '#000' },
+  averagesSubtitle: { fontSize: 14, color: '#636366' },
 });
