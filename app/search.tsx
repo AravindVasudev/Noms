@@ -54,15 +54,18 @@ export default function SearchScreen() {
     router.replace('/(tabs)/');
   };
 
+  const isSearching = searchQuery.trim().length > 0;
+
   const filteredCatalog = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return catalog;
-    }
-    const query = searchQuery.toLowerCase();
-    return catalog.filter((item) => 
-      (item.name || '').toLowerCase().includes(query)
+    const base = !isSearching
+      ? catalog
+      : catalog.filter((item) =>
+        (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    return base.slice().sort((a, b) =>
+      (a.name || '').trim().localeCompare((b.name || '').trim(), undefined, { sensitivity: 'base' }),
     );
-  }, [catalog, searchQuery]);
+  }, [catalog, searchQuery, isSearching]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -120,7 +123,7 @@ export default function SearchScreen() {
           <Text style={styles.emptyText}>Catalog is empty. Click here to add.</Text>
         </Pressable>
       ) : (
-        <CatalogEntries items={filteredCatalog} date={paramDate ? new Date(paramDate as string) : new Date()} />
+        <CatalogEntries items={filteredCatalog} date={paramDate ? new Date(paramDate as string) : new Date()} showAlphaScroller={!isSearching} />
       )}
       {keyboardVisible && (
         <View style={[styles.keyboardAccessory, { bottom: keyboardHeight }]}>
