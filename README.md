@@ -13,9 +13,9 @@ Noms is a simple food journal with daily aggregates and long-term visual insight
 
 # Screenshots
 
-| Diary | Insights | Settings |
-|:---:|:---:|:---:|
-| <img src="./screen_1.png" alt="Diary Screenshot" width="50%"> | <img src="./screen_2.png" alt="Diary Screenshot" width="50%"> | <img src="./screen_3.png" alt="Diary Screenshot" width="50%"> |
+| Diary | Catalog |Insights | Settings |
+|:---:|:---:|:---:|:---:|
+| <img src="./screen_1.png" alt="Diary Screenshot" width="50%"> | <img src="./screen_4.png" alt="Catalog Screenshot" width="50%"> | <img src="./screen_2.png" alt="Diary Screenshot" width="50%"> | <img src="./screen_3.png" alt="Diary Screenshot" width="50%"> |
 
 # Build
 
