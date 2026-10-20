@@ -27,4 +27,13 @@ export function parseDateKey(iso: string) {
   return new Date(y, m - 1, d);
 }
 
-export default { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel };
+/** Monday-start calendar week containing `date`, at local midnight. */
+export function getStartOfWeek(date: Date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const diff = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - diff);
+  return d;
+}
+
+export default { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel, getStartOfWeek };
