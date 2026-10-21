@@ -102,9 +102,12 @@ export default function Insights() {
   }, [dayKeys, diary, visibleMetrics]);
 
   // Period averages: daily mean over logged days for fixed Week/Fortnight/Month
-  // windows. Independent of the Duration picker.
+  // windows. Independent of the Duration picker. Excludes today since the
+  // current day may still be unfinished.
   const averages = useMemo(() => {
     const round = (n: number) => Math.round(n * 100) / 100;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
 
     const result: Record<InsightMetricId, (number | null)[]> = {
       calories: [],
@@ -115,7 +118,7 @@ export default function Insights() {
     };
     for (const metric of visibleMetrics) {
       result[metric.id] = AVERAGE_WINDOWS.map(({ days }) => {
-        const keys = getLastNDaysKeys(days);
+        const keys = getLastNDaysKeys(days, yesterday);
         let total = 0;
         let loggedDays = 0;
         for (const key of keys) {
@@ -174,7 +177,7 @@ export default function Insights() {
             ))}
             <View style={styles.averagesHeader}>
               <Text style={styles.averagesTitle}>Period Averages</Text>
-              <Text style={styles.averagesSubtitle}>Daily average over logged days</Text>
+              <Text style={styles.averagesSubtitle}>Daily average over logged days · excludes today</Text>
             </View>
             {visibleMetrics.map((metric) => (
               <AverageCard
