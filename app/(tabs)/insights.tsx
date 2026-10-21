@@ -48,6 +48,7 @@ export default function Insights() {
     fiber: parseFloat(goalsStrings.fiber) || 0,
     fat: parseFloat(goalsStrings.fat) || 0,
     carbs: parseFloat(goalsStrings.carbs) || 0,
+    tdee: parseFloat(goalsStrings.tdee) || 0,
   }), [goalsStrings]);
 
   const visibleMetrics = useMemo(
@@ -185,6 +186,7 @@ export default function Insights() {
                 title={`${metric.title} Average`}
                 unit={metric.unit}
                 overIsGood={metric.overIsGood}
+                tdee={metric.id === 'calories' ? goals.tdee : undefined}
                 rows={AVERAGE_WINDOWS.map((window, index) => ({
                   periodLabel: window.periodLabel,
                   average: averages[metric.id][index] ?? null,
