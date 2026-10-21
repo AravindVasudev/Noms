@@ -7,6 +7,7 @@ export type Goals = {
   fiber: string;
   fat: string;
   carbs: string;
+  tdee: string;
 };
 
 const initializeGoals = createAsyncThunk('goals/initialize', async () => {
@@ -16,6 +17,7 @@ const initializeGoals = createAsyncThunk('goals/initialize', async () => {
     fiber: await AsyncStorage.getItem('goal-fiber') || '',
     fat: await AsyncStorage.getItem('goal-fat') || '',
     carbs: await AsyncStorage.getItem('goal-carbs') || '',
+    tdee: await AsyncStorage.getItem('goal-tdee') || '',
   };
   return goals;
 });
@@ -26,17 +28,18 @@ const setGoalsAsync = createAsyncThunk('goals/setGoals', async (goals: Goals) =>
   if (goals.fiber.trim()) await AsyncStorage.setItem('goal-fiber', goals.fiber);
   if (goals.fat.trim()) await AsyncStorage.setItem('goal-fat', goals.fat);
   if (goals.carbs.trim()) await AsyncStorage.setItem('goal-carbs', goals.carbs);
+  if (goals.tdee.trim()) await AsyncStorage.setItem('goal-tdee', goals.tdee);
   return goals;
 });
 
 const clearAllAsync = createAsyncThunk('goals/clearAll', async () => {
-  await AsyncStorage.multiRemove(['goal-calories', 'goal-protein', 'goal-fiber', 'goal-fat', 'goal-carbs']);
-  return { calories: '', protein: '', fiber: '', fat: '', carbs: '' };
+  await AsyncStorage.multiRemove(['goal-calories', 'goal-protein', 'goal-fiber', 'goal-fat', 'goal-carbs', 'goal-tdee']);
+  return { calories: '', protein: '', fiber: '', fat: '', carbs: '', tdee: '' };
 });
 
 const goalsSlice = createSlice({
   name: 'goals',
-  initialState: { calories: '', protein: '', fiber: '', fat: '', carbs: '' } as Goals,
+  initialState: { calories: '', protein: '', fiber: '', fat: '', carbs: '', tdee: '' } as Goals,
   reducers: {},
   extraReducers: (builder) => {
     builder

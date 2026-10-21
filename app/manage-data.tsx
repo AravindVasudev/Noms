@@ -104,7 +104,7 @@ export default function ManageData() {
             text: 'Import',
             onPress: async () => {
               await dispatch(setProfile(importedData.profile));
-              await dispatch(setGoalsAsync(importedData.goals));
+              await dispatch(setGoalsAsync({ tdee: '', ...importedData.goals }));
               await dispatch(setCatalog(importedData.catalog));
               await dispatch(setDiary(importedData.diary));
               if ('insightsSettings' in importedData) {

@@ -125,6 +125,7 @@ export default function TdeeCalculatorScreen() {
         fiber: String(macros.fiber),
         fat: String(macros.fat),
         carbs: String(macros.carbs),
+        tdee: String(result.tdee),
       }),
     );
     Alert.alert('Goals updated', `${goalLabel} · ${splitLabel}: ${calories} kcal applied.`, [

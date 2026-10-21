@@ -12,6 +12,7 @@ const WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 const EMPTY_GREY = '#E9E9EE';
 const DONE_GREEN = '#D1EFB5';
+const DONE_YELLOW = '#FFCC00';
 const DONE_RED = '#DD7373';
 const DONE_NEUTRAL = '#007AFF';
 const SELECT_RING = '#007AFF';
@@ -45,6 +46,27 @@ export default function DatePicker({ value, onChange }: Props) {
     const n = parseFloat(goals.calories);
     return goals.calories && !isNaN(n) && n > 0 ? n : null;
   }, [goals.calories]);
+
+  const tdee = useMemo(() => {
+    const n = parseFloat(goals.tdee);
+    return goals.tdee && !isNaN(n) && n > 0 ? n : null;
+  }, [goals.tdee]);
+
+  const getFill = useCallback(
+    (calories: number): string => {
+      if (goal === null) return DONE_NEUTRAL;
+      if (tdee === null || tdee === goal) return calories > goal ? DONE_RED : DONE_GREEN;
+      if (goal < tdee) {
+        if (calories <= goal) return DONE_GREEN;
+        if (calories <= tdee) return DONE_YELLOW;
+        return DONE_RED;
+      }
+      if (calories >= goal) return DONE_GREEN;
+      if (calories >= tdee) return DONE_YELLOW;
+      return DONE_RED;
+    },
+    [goal, tdee]
+  );
 
   const statsByKey = useMemo(() => {
     const map = new Map<string, { count: number; calories: number }>();
@@ -121,8 +143,7 @@ export default function DatePicker({ value, onChange }: Props) {
             const isToday = key === todayKey;
             const stats = statsByKey.get(key);
             const logged = !!stats && stats.count > 0;
-            const over = goal !== null && (stats?.calories ?? 0) > goal;
-            const fill = !logged ? EMPTY_GREY : goal === null ? DONE_NEUTRAL : over ? DONE_RED : DONE_GREEN;
+            const fill = !logged ? EMPTY_GREY : getFill(stats?.calories ?? 0);
             // Past logged days render as full fills; today renders in-progress
             // (grey ring + filled center) since the day isn't over yet.
             const variant = !logged || isFuture ? 'empty' : isToday ? 'partial' : 'done';

@@ -20,6 +20,7 @@ export default function GoalsScreen() {
     fiber: '',
     fat: '',
     carbs: '',
+    tdee: '',
   });
 
   useEffect(() => {
@@ -80,6 +81,12 @@ export default function GoalsScreen() {
             </TouchableOpacity>
 
             <View style={styles.fieldRow}>
+              <Text style={[styles.label, styles.labelInline]}>TDEE (kcal)</Text>
+              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.tdee} onChangeText={(v) => setLocalGoals((p) => ({ ...p, tdee: v }))} />
+            </View>
+            <Text style={styles.hint}>Days between your goal and TDEE show yellow in the diary calendar.</Text>
+
+            <View style={styles.fieldRow}>
               <Text style={[styles.label, styles.labelInline]}>Calories</Text>
               <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.calories} onChangeText={(v) => setLocalGoals((p) => ({ ...p, calories: v }))} />
             </View>
@@ -128,6 +135,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: '#034ea6' },
   label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6, color: '#034ea6' },
+  hint: { fontSize: 12, color: '#666', marginBottom: 4 },
   input: { borderWidth: 0, backgroundColor: '#f0f0f3', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 12 },
   buttons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   fieldRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 8 },
