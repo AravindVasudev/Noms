@@ -17,6 +17,7 @@ const METRIC_LABELS: Record<InsightMetricId, string> = {
   fiber: 'Fiber',
   fat: 'Fat',
   carbs: 'Carbs',
+  weight: 'Weight',
 };
 
 export default function CustomizeInsightsScreen() {

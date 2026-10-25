@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
-export type InsightMetricId = 'calories' | 'protein' | 'fiber' | 'fat' | 'carbs';
+export type InsightMetricId = 'calories' | 'protein' | 'fiber' | 'fat' | 'carbs' | 'weight';
 
 export type InsightsSettings = {
   order: InsightMetricId[];
@@ -10,7 +10,7 @@ export type InsightsSettings = {
 
 const STORAGE_KEY = 'insights-settings';
 
-export const DEFAULT_ORDER: InsightMetricId[] = ['calories', 'protein', 'fiber', 'fat', 'carbs'];
+export const DEFAULT_ORDER: InsightMetricId[] = ['calories', 'protein', 'fiber', 'fat', 'carbs', 'weight'];
 
 const DEFAULT_VISIBLE: Record<InsightMetricId, boolean> = {
   calories: true,
@@ -18,6 +18,7 @@ const DEFAULT_VISIBLE: Record<InsightMetricId, boolean> = {
   fiber: true,
   fat: true,
   carbs: true,
+  weight: true,
 };
 
 export const DEFAULT_INSIGHTS_SETTINGS: InsightsSettings = {

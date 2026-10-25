@@ -11,9 +11,11 @@ interface LineChartCardProps {
   width?: number;
   height?: number;
   scrollable?: boolean;
+  decimalPlaces?: number;
+  fromZero?: boolean;
 }
 
-export function LineChartCard({ title, labels, dataPoints, goal, yAxisSuffix = '', width, height = 220, scrollable = false }: LineChartCardProps) {
+export function LineChartCard({ title, labels, dataPoints, goal, yAxisSuffix = '', width, height = 220, scrollable = false, decimalPlaces = 0, fromZero = true }: LineChartCardProps) {
   const screenWidth = Dimensions.get('window').width - 32;
   const chartWidth = scrollable ? Math.max(screenWidth, labels.length * 60) : (width ?? screenWidth);
 
@@ -37,7 +39,7 @@ export function LineChartCard({ title, labels, dataPoints, goal, yAxisSuffix = '
         backgroundColor: '#ffffff',
         backgroundGradientFrom: '#ffffff',
         backgroundGradientTo: '#ffffff',
-        decimalPlaces: 0,
+        decimalPlaces,
         color: (opacity = 1) => `rgba(34, 150, 243, ${opacity})`,
         labelColor: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
         style: { borderRadius: 8 },
@@ -45,7 +47,7 @@ export function LineChartCard({ title, labels, dataPoints, goal, yAxisSuffix = '
       }}
       bezier
       style={{ borderRadius: 8 }}
-      fromZero
+      fromZero={fromZero}
     />
   );
 

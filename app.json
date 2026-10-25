@@ -44,6 +44,13 @@
           }
         }
       ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "noms reads your weight from Apple Health to show your weight trend in Insights.",
+          "background": false
+        }
+      ],
       "expo-sqlite"
     ],
     "experiments": {
