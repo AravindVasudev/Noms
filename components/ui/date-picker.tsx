@@ -7,11 +7,14 @@ import { PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-na
 type Props = {
   value: Date;
   onChange: (v: Date) => void;
+  /** When provided, overrides the food-diary coloring: marked days get `activeColor`. */
+  markedDates?: Set<string>;
+  activeColor?: string;
 };
 
 const WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-export default function DatePicker({ value, onChange }: Props) {
+export default function DatePicker({ value, onChange, markedDates, activeColor }: Props) {
   const diary = useAppSelector((state) => state.diary.diary);
   const goals = useAppSelector((state) => state.goals);
   const { colors, scheme } = useAppTheme();
@@ -72,6 +75,7 @@ export default function DatePicker({ value, onChange }: Props) {
 
   const statsByKey = useMemo(() => {
     const map = new Map<string, { count: number; calories: number }>();
+    if (markedDates) return map;
     for (const entry of diary) {
       const key = formatDateKey(entry.date);
       const qty = entry.quantity ?? 1.0;
@@ -82,7 +86,7 @@ export default function DatePicker({ value, onChange }: Props) {
       map.set(key, prev);
     }
     return map;
-  }, [diary]);
+  }, [diary, markedDates]);
 
   const goPrevWeek = useCallback(() => {
     const d = new Date(value);
@@ -143,9 +147,12 @@ export default function DatePicker({ value, onChange }: Props) {
             const isSelected = key === valueKey;
             const isFuture = key > todayKey;
             const isToday = key === todayKey;
-            const stats = statsByKey.get(key);
-            const logged = !!stats && stats.count > 0;
-            const fill = !logged ? emptyGrey : getFill(stats?.calories ?? 0);
+            const logged = markedDates
+              ? markedDates.has(key)
+              : !!statsByKey.get(key) && (statsByKey.get(key)?.count ?? 0) > 0;
+            const fill = markedDates
+              ? (activeColor ?? doneGreen)
+              : getFill(statsByKey.get(key)?.calories ?? 0);
             // Past logged days render as full fills; today renders in-progress
             // (grey ring + filled center) since the day isn't over yet.
             const variant = !logged || isFuture ? 'empty' : isToday ? 'partial' : 'done';

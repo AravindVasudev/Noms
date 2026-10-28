@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/hooks/use-app-theme';
+import { formatDateKey } from '@/lib/date';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import {
   deleteWorkoutAsync,
@@ -13,6 +14,7 @@ import { KG_TO_LB, WeightUnit } from '@/lib/weight';
 import { formatElapsed, getWorkoutElapsedSeconds, getWorkoutName } from '@/lib/workout-time';
 import type { Workout } from '@/lib/workout-store';
 import { formatExerciseRef } from '@/lib/workout-store';
+import DatePicker from '@/components/ui/date-picker';
 
 function convertWeight(weight: number, from: WeightUnit, to: WeightUnit): number {
   if (from === to) return weight;
@@ -29,6 +31,26 @@ export default function Train() {
     (state) => state.training
   );
   const [expandedWorkoutId, setExpandedWorkoutId] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+
+  const workoutDates = useMemo(() => {
+    const dates = new Set<string>();
+    for (const w of workouts) {
+      dates.add(formatDateKey(w.startedAt));
+    }
+    return dates;
+  }, [workouts]);
+
+  const selectedKey = formatDateKey(selectedDate);
+  const filteredWorkouts = useMemo(
+    () => workouts.filter((w) => formatDateKey(w.startedAt) === selectedKey),
+    [workouts, selectedKey]
+  );
+
+  const handleSelectDate = (d: Date) => {
+    setSelectedDate(d);
+    setExpandedWorkoutId(null);
+  };
 
   const exerciseById = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises]);
 
@@ -84,6 +106,8 @@ export default function Train() {
           <Text style={[styles.title, { color: colors.label }]}>Start Workout</Text>
         </View>
 
+        <DatePicker value={selectedDate} onChange={handleSelectDate} markedDates={workoutDates} />
+
         <Text style={[styles.sectionLabel, { color: colors.label }]}>Quick Start</Text>
         {activeWorkout ? (
           <Pressable style={[styles.resumeButton, { borderColor: colors.systemBlue }]} onPress={() => router.push('/workout')}>
@@ -101,8 +125,10 @@ export default function Train() {
           <Text style={[styles.sectionLabel, { color: colors.label }]}>History</Text>
           {workouts.length === 0 ? (
             <Text style={[styles.emptyText, { color: colors.secondaryLabel }]}>No workouts yet. Start your first one above.</Text>
+          ) : filteredWorkouts.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.secondaryLabel }]}>No workout logged on this day.</Text>
           ) : (
-            workouts.map((w) => {
+            filteredWorkouts.map((w) => {
               const stats = workoutStats.get(w.id);
               const expanded = expandedWorkoutId === w.id;
               const grouped = new Map<string, { exerciseId: number; variation: string | null; sets: NonNullable<ReturnType<typeof loggedSetsByWorkout.get>> }>();
