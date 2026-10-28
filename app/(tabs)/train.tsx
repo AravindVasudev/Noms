@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import {
   deleteWorkoutAsync,
@@ -22,6 +23,7 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 export default function Train() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { colors } = useAppTheme();
   const { exercises, workouts, sets, activeWorkout, weightUnit, initialized } = useAppSelector(
     (state) => state.training
   );
@@ -75,29 +77,29 @@ export default function Train() {
   if (!initialized) return null;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.systemGroupedBackground }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Start Workout</Text>
+          <Text style={[styles.title, { color: colors.label }]}>Start Workout</Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Quick Start</Text>
+        <Text style={[styles.sectionLabel, { color: colors.label }]}>Quick Start</Text>
         {activeWorkout ? (
-          <Pressable style={styles.resumeButton} onPress={() => router.push('/workout')}>
-            <Text style={styles.resumeButtonText}>
+          <Pressable style={[styles.resumeButton, { borderColor: colors.systemBlue }]} onPress={() => router.push('/workout')}>
+            <Text style={[styles.resumeButtonText, { color: colors.systemBlue }]}>
               Resume Workout{activeWorkout.status === 'paused' ? ' (Paused)' : ''}
             </Text>
           </Pressable>
         ) : (
-          <Pressable style={styles.startButton} onPress={handleStart}>
-            <Text style={styles.startButtonText}>Start an Empty Workout</Text>
+          <Pressable style={[styles.startButton, { backgroundColor: colors.systemBlue }]} onPress={handleStart}>
+            <Text style={[styles.startButtonText, { color: colors.onAccent }]}>Start an Empty Workout</Text>
           </Pressable>
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>History</Text>
+          <Text style={[styles.sectionLabel, { color: colors.label }]}>History</Text>
           {workouts.length === 0 ? (
-            <Text style={styles.emptyText}>No workouts yet. Start your first one above.</Text>
+            <Text style={[styles.emptyText, { color: colors.secondaryLabel }]}>No workouts yet. Start your first one above.</Text>
           ) : (
             workouts.map((w) => {
               const stats = workoutStats.get(w.id);
@@ -109,13 +111,13 @@ export default function Train() {
                 grouped.set(s.exerciseId, list);
               }
               return (
-                <View key={w.id} style={styles.card}>
+                <View key={w.id} style={[styles.card, { backgroundColor: colors.cardBackground }]}>
                   <Pressable
                     onPress={() => setExpandedWorkoutId(expanded ? null : w.id)}
                     accessibilityRole="button"
                   >
-                    <Text style={styles.cardTitle}>{getWorkoutName(w.startedAt)}</Text>
-                    <Text style={styles.cardSub}>
+                    <Text style={[styles.cardTitle, { color: colors.label }]}>{getWorkoutName(w.startedAt)}</Text>
+                    <Text style={[styles.cardSub, { color: colors.secondaryLabel }]}>
                       {w.startedAt.toLocaleDateString(undefined, {
                         month: 'short',
                         day: 'numeric',
@@ -124,21 +126,21 @@ export default function Train() {
                       {' · '}
                       {formatElapsed(getWorkoutElapsedSeconds(w, w.endedAt?.getTime() ?? Date.now()))}
                     </Text>
-                    <Text style={styles.cardMeta}>
+                    <Text style={[styles.cardMeta, { color: colors.secondaryLabel }]}>
                       {stats?.exerciseCount ?? 0} {(stats?.exerciseCount ?? 0) === 1 ? 'exercise' : 'exercises'}
                       {' · '}
                       {stats?.volume ?? 0} {weightUnit}
                     </Text>
                   </Pressable>
                   {expanded && (
-                    <View style={styles.detail}>
+                    <View style={[styles.detail, { borderTopColor: colors.separator }]}>
                       {[...grouped.entries()].map(([exerciseId, exSets]) => (
                         <View key={exerciseId} style={styles.detailGroup}>
-                          <Text style={styles.detailExercise}>
+                          <Text style={[styles.detailExercise, { color: colors.label }]}>
                             {exerciseById.get(exerciseId)?.name ?? 'Unknown'}
                           </Text>
                           {exSets.map((s) => (
-                            <Text key={s.id} style={styles.detailSet}>
+                            <Text key={s.id} style={[styles.detailSet, { color: colors.secondaryLabel }]}>
                               {s.weight == null
                                 ? 'Bodyweight'
                                 : `${round1(convertWeight(s.weight, s.unit, weightUnit))} ${weightUnit}`}
@@ -149,7 +151,7 @@ export default function Train() {
                         </View>
                       ))}
                       <Pressable onPress={() => handleDeleteWorkout(w)}>
-                        <Text style={styles.deleteText}>Delete workout</Text>
+                        <Text style={[styles.deleteText, { color: colors.destructive }]}>Delete workout</Text>
                       </Pressable>
                     </View>
                   )}
@@ -158,51 +160,45 @@ export default function Train() {
             })
           )}
         </View>
-        <Text style={styles.hint}>Charts live in Insights — enable Training graphs under Customize Insights.</Text>
+        <Text style={[styles.hint, { color: colors.secondaryLabel }]}>Charts live in Insights — enable Training graphs under Customize Insights.</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const BLUE = '#007AFF';
-
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#fff' },
+  safeArea: { flex: 1 },
   scroll: { padding: 16, gap: 10, paddingBottom: 120 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  title: { fontSize: 26, fontWeight: '700', color: '#000' },
-  sectionLabel: { fontSize: 17, fontWeight: '700', color: '#000', marginTop: 6 },
+  title: { fontSize: 26, fontWeight: '700' },
+  sectionLabel: { fontSize: 17, fontWeight: '700', marginTop: 6 },
   section: { gap: 8 },
   startButton: {
-    backgroundColor: BLUE,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
   },
-  startButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  startButtonText: { fontSize: 16, fontWeight: '700' },
   resumeButton: {
-    backgroundColor: '#f0f7ff',
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: BLUE,
   },
-  resumeButtonText: { color: BLUE, fontSize: 16, fontWeight: '700' },
+  resumeButtonText: { fontSize: 16, fontWeight: '700' },
   card: {
-    backgroundColor: '#f6f6f8',
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
   },
-  cardTitle: { fontSize: 17, fontWeight: '700', color: '#000' },
-  cardSub: { fontSize: 14, color: '#636366', marginTop: 2 },
-  cardMeta: { fontSize: 14, color: '#636366', marginTop: 4, fontVariant: ['tabular-nums'] },
-  detail: { marginTop: 8, gap: 8, borderTopWidth: 1, borderTopColor: '#e5e5ea', paddingTop: 8 },
+  cardTitle: { fontSize: 17, fontWeight: '700' },
+  cardSub: { fontSize: 14, marginTop: 2 },
+  cardMeta: { fontSize: 14, marginTop: 4, fontVariant: ['tabular-nums'] },
+  detail: { marginTop: 8, gap: 8, borderTopWidth: 1, paddingTop: 8 },
   detailGroup: { gap: 2 },
-  detailExercise: { fontSize: 15, fontWeight: '600', color: '#000' },
-  detailSet: { fontSize: 14, color: '#3a3a3c', fontVariant: ['tabular-nums'] },
-  deleteText: { color: '#ff3b30', fontSize: 14, fontWeight: '600', marginTop: 4 },
-  emptyText: { color: '#888', fontSize: 15 },
-  hint: { color: '#8e8e93', fontSize: 13, textAlign: 'center' },
+  detailExercise: { fontSize: 15, fontWeight: '600' },
+  detailSet: { fontSize: 14, fontVariant: ['tabular-nums'] },
+  deleteText: { fontSize: 14, fontWeight: '600', marginTop: 4 },
+  emptyText: { fontSize: 15 },
+  hint: { fontSize: 13, textAlign: 'center' },
 });

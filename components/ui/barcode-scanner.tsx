@@ -1,3 +1,4 @@
+import { useAppTheme } from '@/hooks/use-app-theme';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
@@ -12,6 +13,7 @@ export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: P
   const [hasPermission, setHasPermission] = useState(false);
   const hasScannedRef = useRef(false);
   const device = useCameraDevice('back');
+  const { colors } = useAppTheme();
 
   useEffect(() => {
     if (visible) {
@@ -60,8 +62,8 @@ export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: P
       <Modal visible={visible} animationType="slide" transparent={false}>
         <View style={styles.container}>
           <Text style={styles.errorText}>No camera device found</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
+          <TouchableOpacity style={[styles.closeButton, { backgroundColor: colors.systemBlue }]} onPress={onClose}>
+            <Text style={[styles.closeButtonText, { color: colors.onAccent }]}>Close</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -73,8 +75,8 @@ export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: P
       <Modal visible={visible} animationType="slide" transparent={false}>
         <View style={styles.container}>
           <Text style={styles.errorText}>Requesting camera permission...</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
+          <TouchableOpacity style={[styles.closeButton, { backgroundColor: colors.systemBlue }]} onPress={onClose}>
+            <Text style={[styles.closeButtonText, { color: colors.onAccent }]}>Close</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -94,15 +96,15 @@ export default function BarcodeScanner({ visible, onClose, onBarcodeScanned }: P
           <View style={styles.topOverlay} />
           <View style={styles.middleRow}>
             <View style={styles.sideOverlay} />
-            <View style={styles.scanArea} />
+            <View style={[styles.scanArea, { borderColor: colors.systemBlue }]} />
             <View style={styles.sideOverlay} />
           </View>
           <View style={styles.bottomOverlay}>
             <Text style={styles.instructionText}>
               Point camera at a barcode
             </Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>Cancel</Text>
+            <TouchableOpacity style={[styles.closeButton, { backgroundColor: colors.systemBlue }]} onPress={onClose}>
+              <Text style={[styles.closeButtonText, { color: colors.onAccent }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -141,7 +143,6 @@ const styles = StyleSheet.create({
   scanArea: {
     width: 250,
     borderWidth: 2,
-    borderColor: '#007AFF',
     backgroundColor: 'transparent',
   },
   bottomOverlay: {
@@ -158,13 +159,11 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   closeButton: {
-    backgroundColor: '#007AFF',
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 10,
   },
   closeButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },

@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { getCalorieBreakdown } from '../../lib/calorie-breakdown';
 import { useAppSelector } from '../../lib/store';
 import CalorieDonut, { DonutSegment } from './calorie-donut';
@@ -18,15 +19,6 @@ type Props = {
   onAdd: () => void;
 };
 
-const SEGMENT_COLORS = {
-  protein: '#34C759',
-  fat: '#FFCC00',
-  carbs: '#FF3B30',
-  fiber: '#8B2D26',
-  unknown: '#A9A9B0',
-  goal: '#007AFF',
-} as const;
-
 const DONUT_SIZE = 148;
 
 function formatGrams(value: number): string {
@@ -34,21 +26,31 @@ function formatGrams(value: number): string {
   return Number.isInteger(rounded) ? String(rounded) : String(rounded);
 }
 
-function MacroRow({ dot, name, value }: { dot: string; name: string; value: string }) {
+function MacroRow({ dot, name, value, colors }: { dot: string; name: string; value: string; colors: { label: string; secondary: string } }) {
   return (
     <View style={styles.macroRow}>
       <View style={[styles.dot, { backgroundColor: dot }]} />
-      <Text style={styles.macroName}>{name}</Text>
-      <Text style={styles.macroValue}>{value}</Text>
+      <Text style={[styles.macroName, { color: colors.secondary }]}>{name}</Text>
+      <Text style={[styles.macroValue, { color: colors.label }]}>{value}</Text>
     </View>
   );
 }
 
 export default function Aggregates({ totals, onAdd }: Props) {
   const goals = useAppSelector((state) => state.goals);
+  const { colors, scheme } = useAppTheme();
   const breakdown = getCalorieBreakdown(totals, goals.calories);
   const hasGoal = breakdown.goal !== null;
   const isOver = breakdown.remaining !== null && breakdown.remaining < 0;
+
+  const segmentColors = {
+    protein: scheme === 'dark' ? '#30D158' : '#34C759',
+    fat: scheme === 'dark' ? '#FFD60A' : '#FFCC00',
+    carbs: scheme === 'dark' ? '#FF453A' : '#FF3B30',
+    fiber: scheme === 'dark' ? '#AC8E68' : '#8B2D26',
+    unknown: scheme === 'dark' ? '#636366' : '#A9A9B0',
+    goal: colors.systemBlue,
+  };
 
   // Full circle = goal when set and not over; otherwise shares of what was eaten.
   const denominator = hasGoal && !isOver
@@ -56,11 +58,11 @@ export default function Aggregates({ totals, onAdd }: Props) {
     : Math.max(breakdown.macroKcal + breakdown.unknownKcal, 1);
   const frac = (kcal: number) => Math.min(Math.max(kcal / denominator, 0), 1);
   const segments: DonutSegment[] = [
-    { fraction: frac(breakdown.proteinKcal), color: SEGMENT_COLORS.protein },
-    { fraction: frac(breakdown.fatKcal), color: SEGMENT_COLORS.fat },
-    { fraction: frac(breakdown.carbsKcal), color: SEGMENT_COLORS.carbs },
-    { fraction: frac(breakdown.fiberKcal), color: SEGMENT_COLORS.fiber },
-    { fraction: frac(breakdown.unknownKcal), color: SEGMENT_COLORS.unknown },
+    { fraction: frac(breakdown.proteinKcal), color: segmentColors.protein },
+    { fraction: frac(breakdown.fatKcal), color: segmentColors.fat },
+    { fraction: frac(breakdown.carbsKcal), color: segmentColors.carbs },
+    { fraction: frac(breakdown.fiberKcal), color: segmentColors.fiber },
+    { fraction: frac(breakdown.unknownKcal), color: segmentColors.unknown },
   ];
 
   const centerNumber = !hasGoal
@@ -72,38 +74,38 @@ export default function Aggregates({ totals, onAdd }: Props) {
 
   return (
     <LinearGradient
-      colors={['#e9f4ff', '#ffffff']}
+      colors={scheme === 'dark' ? [colors.cardBackground, colors.cardBackground] : ['#e9f4ff', '#ffffff']}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
-      style={styles.wrap}
+      style={[styles.wrap, { borderColor: colors.systemBlue, backgroundColor: colors.cardBackground }]}
     >
       <View style={styles.titleRow}>
         <View>
-          <Text style={styles.title}>Calories</Text>
-          {hasGoal && <Text style={styles.subtitle}>Remaining = Goal − Food</Text>}
+          <Text style={[styles.title, { color: colors.label }]}>Calories</Text>
+          {hasGoal && <Text style={[styles.subtitle, { color: colors.secondaryLabel }]}>Remaining = Goal − Food</Text>}
         </View>
-        <TouchableOpacity style={styles.plus} onPress={onAdd}>
-          <Text style={styles.plusText}>+</Text>
+        <TouchableOpacity style={[styles.plus, { backgroundColor: colors.systemBlue }]} onPress={onAdd}>
+          <Text style={[styles.plusText, { color: colors.onAccent }]}>+</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.row}>
         <View style={{ width: DONUT_SIZE, height: DONUT_SIZE }}>
-          <CalorieDonut size={DONUT_SIZE} strokeWidth={16} segments={segments} />
+          <CalorieDonut size={DONUT_SIZE} strokeWidth={16} segments={segments} trackColor={scheme === 'dark' ? '#2C2C2E' : '#E9E9EE'} />
           <View style={styles.centerOverlay}>
-            <Text style={[styles.centerNumber, isOver && styles.over]} numberOfLines={1}>
+            <Text style={[styles.centerNumber, { color: colors.label }, isOver && { color: colors.destructive }]} numberOfLines={1}>
               {centerNumber}
             </Text>
-            <Text style={[styles.centerLabel, isOver && styles.over]}>{centerLabel}</Text>
+            <Text style={[styles.centerLabel, { color: colors.secondaryLabel }, isOver && { color: colors.destructive }]}>{centerLabel}</Text>
           </View>
         </View>
         <View style={styles.table}>
           {hasGoal && (
-            <MacroRow dot={SEGMENT_COLORS.goal} name="Base Goal" value={`${Math.round(breakdown.goal as number)} Cal`} />
+            <MacroRow dot={segmentColors.goal} name="Base Goal" value={`${Math.round(breakdown.goal as number)} Cal`} colors={{ label: colors.label, secondary: colors.secondaryLabel }} />
           )}
-          <MacroRow dot={SEGMENT_COLORS.protein} name="Protein" value={`${formatGrams(totals.protein)} g`} />
-          <MacroRow dot={SEGMENT_COLORS.fat} name="Fat" value={`${formatGrams(totals.fat)} g`} />
-          <MacroRow dot={SEGMENT_COLORS.carbs} name="Carbs" value={`${formatGrams(totals.carbs)} g`} />
-          <MacroRow dot={SEGMENT_COLORS.fiber} name="Fiber" value={`${formatGrams(totals.fiber)} g`} />
+          <MacroRow dot={segmentColors.protein} name="Protein" value={`${formatGrams(totals.protein)} g`} colors={{ label: colors.label, secondary: colors.secondaryLabel }} />
+          <MacroRow dot={segmentColors.fat} name="Fat" value={`${formatGrams(totals.fat)} g`} colors={{ label: colors.label, secondary: colors.secondaryLabel }} />
+          <MacroRow dot={segmentColors.carbs} name="Carbs" value={`${formatGrams(totals.carbs)} g`} colors={{ label: colors.label, secondary: colors.secondaryLabel }} />
+          <MacroRow dot={segmentColors.fiber} name="Fiber" value={`${formatGrams(totals.fiber)} g`} colors={{ label: colors.label, secondary: colors.secondaryLabel }} />
         </View>
       </View>
     </LinearGradient>
@@ -113,11 +115,9 @@ export default function Aggregates({ totals, onAdd }: Props) {
 const styles = StyleSheet.create({
   wrap: {
     borderWidth: 2,
-    borderColor: '#007AFF',
     borderRadius: 10,
     padding: 10,
     marginBottom: 8,
-    backgroundColor: 'rgba(0,122,255,0.06)',
   },
   titleRow: {
     flexDirection: 'row',
@@ -128,11 +128,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111',
   },
   subtitle: {
     fontSize: 12,
-    color: '#8e8e93',
     marginTop: 2,
   },
   row: {
@@ -151,14 +149,9 @@ const styles = StyleSheet.create({
   centerNumber: {
     fontSize: 30,
     fontWeight: '700',
-    color: '#111',
   },
   centerLabel: {
     fontSize: 13,
-    color: '#555',
-  },
-  over: {
-    color: '#ff3b30',
   },
   table: {
     flex: 1,
@@ -178,23 +171,19 @@ const styles = StyleSheet.create({
   macroName: {
     flex: 1,
     fontSize: 13,
-    color: '#333',
   },
   macroValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#111',
   },
   plus: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#007AFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   plusText: {
-    color: '#fff',
     fontSize: 20,
     lineHeight: 22,
     fontWeight: '600',

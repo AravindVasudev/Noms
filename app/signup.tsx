@@ -1,3 +1,4 @@
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -9,6 +10,7 @@ import { useAppDispatch } from '@/lib/store';
 export default function SignUpScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { colors } = useAppTheme();
 
   const onSignUp = () => {
     router.push('/profile-info');
@@ -19,16 +21,16 @@ export default function SignUpScreen() {
     router.replace('/(tabs)');
   };
   return (
-    <SafeAreaView style={styles.signUpContainer}>
+    <SafeAreaView style={[styles.signUpContainer, { backgroundColor: colors.systemBackground }]}>
       <View style={styles.logoContainer}>
         <Image source={require('@/assets/images/favicon.png')} style={styles.favicon} />
       </View>
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.button} onPress={onSignUp}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.systemBlue }]} onPress={onSignUp}>
+          <Text style={[styles.buttonText, { color: colors.onAccent }]}>Sign Up</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={onContinue}>
-          <Text style={styles.buttonText}>Continue without sign up</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.systemBlue }]} onPress={onContinue}>
+          <Text style={[styles.buttonText, { color: colors.onAccent }]}>Continue without sign up</Text>
         </TouchableOpacity>
       </View>
 
@@ -41,14 +43,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
     padding: 20,
   },
   buttonsContainer: {
     width: '100%',
   },
   button: {
-    backgroundColor: '#034ea6',
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 8,
@@ -56,7 +56,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -68,10 +67,5 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     marginBottom: 10,
-  },
-  appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#034ea6',
   },
 });

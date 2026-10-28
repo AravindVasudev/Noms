@@ -1,5 +1,6 @@
 import { formatDateKey, getStartOfWeek } from '@/lib/date';
 import { useAppSelector } from '@/lib/store';
+import { useAppTheme } from '@/hooks/use-app-theme';
 import React, { useCallback, useMemo } from 'react';
 import { PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -10,16 +11,17 @@ type Props = {
 
 const WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-const EMPTY_GREY = '#E9E9EE';
-const DONE_GREEN = '#D1EFB5';
-const DONE_YELLOW = '#FFCC00';
-const DONE_RED = '#DD7373';
-const DONE_NEUTRAL = '#007AFF';
-const SELECT_RING = '#007AFF';
-
 export default function DatePicker({ value, onChange }: Props) {
   const diary = useAppSelector((state) => state.diary.diary);
   const goals = useAppSelector((state) => state.goals);
+  const { colors, scheme } = useAppTheme();
+
+  const emptyGrey = scheme === 'dark' ? '#2C2C2E' : '#E9E9EE';
+  const doneGreen = scheme === 'dark' ? '#30D158' : '#D1EFB5';
+  const doneYellow = scheme === 'dark' ? '#FFD60A' : '#FFCC00';
+  const doneRed = scheme === 'dark' ? '#FF453A' : '#DD7373';
+  const doneNeutral = colors.systemBlue;
+  const selectRing = colors.systemBlue;
 
   const today = useMemo(() => new Date(), []);
   const todayKey = useMemo(() => formatDateKey(today), [today]);
@@ -54,18 +56,18 @@ export default function DatePicker({ value, onChange }: Props) {
 
   const getFill = useCallback(
     (calories: number): string => {
-      if (goal === null) return DONE_NEUTRAL;
-      if (tdee === null || tdee === goal) return calories > goal ? DONE_RED : DONE_GREEN;
+      if (goal === null) return doneNeutral;
+      if (tdee === null || tdee === goal) return calories > goal ? doneRed : doneGreen;
       if (goal < tdee) {
-        if (calories <= goal) return DONE_GREEN;
-        if (calories <= tdee) return DONE_YELLOW;
-        return DONE_RED;
+        if (calories <= goal) return doneGreen;
+        if (calories <= tdee) return doneYellow;
+        return doneRed;
       }
-      if (calories >= goal) return DONE_GREEN;
-      if (calories >= tdee) return DONE_YELLOW;
-      return DONE_RED;
+      if (calories >= goal) return doneGreen;
+      if (calories >= tdee) return doneYellow;
+      return doneRed;
     },
-    [goal, tdee]
+    [goal, tdee, doneNeutral, doneRed, doneGreen, doneYellow]
   );
 
   const statsByKey = useMemo(() => {
@@ -132,7 +134,7 @@ export default function DatePicker({ value, onChange }: Props) {
     <View style={styles.wrap}>
       <View style={styles.weekRow}>
         <TouchableOpacity onPress={goPrevWeek} style={styles.nav} accessibilityRole="button" accessibilityLabel="Previous week">
-          <Text style={styles.navText}>◀</Text>
+          <Text style={[styles.navText, { color: colors.systemBlue }]}>◀</Text>
         </TouchableOpacity>
 
         <View {...panResponder.panHandlers} style={styles.strip}>
@@ -143,7 +145,7 @@ export default function DatePicker({ value, onChange }: Props) {
             const isToday = key === todayKey;
             const stats = statsByKey.get(key);
             const logged = !!stats && stats.count > 0;
-            const fill = !logged ? EMPTY_GREY : getFill(stats?.calories ?? 0);
+            const fill = !logged ? emptyGrey : getFill(stats?.calories ?? 0);
             // Past logged days render as full fills; today renders in-progress
             // (grey ring + filled center) since the day isn't over yet.
             const variant = !logged || isFuture ? 'empty' : isToday ? 'partial' : 'done';
@@ -158,19 +160,19 @@ export default function DatePicker({ value, onChange }: Props) {
                 accessibilityLabel={day.toDateString()}
                 accessibilityState={{ selected: isSelected, disabled: isFuture }}
               >
-                <View style={[styles.circle, isSelected && styles.circleSelected]}>
+                <View style={[styles.circle, isSelected && { borderColor: selectRing }]}>
                   <View
                     style={[
                       styles.circleInner,
-                      variant === 'empty' && { backgroundColor: EMPTY_GREY },
+                      variant === 'empty' && { backgroundColor: emptyGrey },
                       variant === 'done' && { backgroundColor: fill },
-                      variant === 'partial' && { backgroundColor: EMPTY_GREY },
+                      variant === 'partial' && { backgroundColor: emptyGrey },
                     ]}
                   >
                     {variant === 'partial' && <View style={[styles.dot, { backgroundColor: fill }]} />}
                   </View>
                 </View>
-                <Text style={[styles.weekday, isToday && styles.weekdayToday]}>{WEEKDAY_LETTERS[i]}</Text>
+                <Text style={[styles.weekday, { color: colors.secondaryLabel }, isToday && { color: colors.systemBlue, fontWeight: '700' as const }]}>{WEEKDAY_LETTERS[i]}</Text>
               </TouchableOpacity>
             );
           })}
@@ -183,10 +185,10 @@ export default function DatePicker({ value, onChange }: Props) {
           accessibilityRole="button"
           accessibilityLabel="Next week"
         >
-          <Text style={[styles.navText, !canGoNextWeek && styles.navTextDisabled]}>▶</Text>
+          <Text style={[styles.navText, { color: colors.systemBlue }, !canGoNextWeek && { color: colors.separator }]}>▶</Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.weekLabel}>{weekLabel}</Text>
+      <Text style={[styles.weekLabel, { color: colors.systemBlue }]}>{weekLabel}</Text>
     </View>
   );
 }
@@ -208,10 +210,6 @@ const styles = StyleSheet.create({
   },
   navText: {
     fontSize: 16,
-    color: '#007AFF',
-  },
-  navTextDisabled: {
-    color: '#a0bce8',
   },
   strip: {
     flex: 1,
@@ -236,9 +234,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  circleSelected: {
-    borderColor: SELECT_RING,
-  },
   circleInner: {
     width: CIRCLE_SIZE,
     height: CIRCLE_SIZE,
@@ -254,17 +249,11 @@ const styles = StyleSheet.create({
   weekday: {
     marginTop: 4,
     fontSize: 12,
-    color: '#8e8e93',
-  },
-  weekdayToday: {
-    fontWeight: '700',
-    color: '#034ea6',
   },
   weekLabel: {
     marginTop: 6,
     textAlign: 'center',
     fontSize: 13,
     fontWeight: '600',
-    color: '#034ea6',
   },
 });

@@ -4,11 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useAppTheme } from '@/hooks/use-app-theme';
 
 export default function ProfileCard() {
   const name = useAppSelector(state => state.profile.username);
   const displayPicture = useAppSelector(state => state.profile.displayPicture);
   const dispatch = useAppDispatch();
+  const { colors } = useAppTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState('');
 
@@ -44,7 +46,7 @@ export default function ProfileCard() {
   };
 
   return (
-    <View style={styles.profileCard}>
+    <View style={[styles.profileCard, { backgroundColor: colors.cardBackground }]}>
       <Pressable onPress={pickImage}>
         <View style={styles.avatarContainer}>
           <Image
@@ -56,7 +58,7 @@ export default function ProfileCard() {
       {isEditing ? (
         <View style={styles.nameEditContainer}>
           <TextInput
-            style={styles.nameInput}
+            style={[styles.nameInput, { color: colors.label, borderBottomColor: colors.separator }]}
             value={tempName}
             onChangeText={setTempName}
             onSubmitEditing={handleSave}
@@ -65,12 +67,12 @@ export default function ProfileCard() {
             selectTextOnFocus
           />
           <Pressable onPress={handleSave} style={styles.checkButton}>
-            <Ionicons name="checkmark" size={24} color="#000" />
+            <Ionicons name="checkmark" size={24} color={colors.systemBlue} />
           </Pressable>
         </View>
       ) : (
         <Pressable onPress={handleEdit}>
-          <Text style={styles.name}>{name}</Text>
+          <Text style={[styles.name, { color: colors.label }]}>{name}</Text>
         </Pressable>
       )}
     </View>
@@ -79,7 +81,6 @@ export default function ProfileCard() {
 
 const styles = StyleSheet.create({
   profileCard: {
-    backgroundColor: '#ffffff',
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 24,
@@ -103,14 +104,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#000',
   },
   nameInput: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#000',
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
     paddingBottom: 4,
     minWidth: 100,
     textAlign: 'center',

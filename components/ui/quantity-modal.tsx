@@ -1,4 +1,5 @@
 import { DEFAULT_QUANTITY, formatQuantity, parseQuantity, truncateQuantityInput } from '@/lib/quantity';
+import { useAppTheme } from '@/hooks/use-app-theme';
 import React, { useState } from 'react';
 import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -14,6 +15,7 @@ type Props = {
 // and pass a `key` per item, so `useState(initialValue)` freshly resets to
 // "1.0" on every open with no reset effect needed.
 export default function QuantityModal({ visible, itemName, initialValue = DEFAULT_QUANTITY.toFixed(1), onConfirm, onCancel }: Props) {
+  const { colors } = useAppTheme();
   const [value, setValue] = useState(initialValue);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,11 +42,11 @@ export default function QuantityModal({ visible, itemName, initialValue = DEFAUL
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.overlay}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Quantity</Text>
-          {!!itemName && <Text style={styles.subtitle} numberOfLines={2}>{itemName}</Text>}
+        <View style={[styles.card, { backgroundColor: colors.cardBackground }]}>
+          <Text style={[styles.title, { color: colors.systemBlue }]}>Quantity</Text>
+          {!!itemName && <Text style={[styles.subtitle, { color: colors.label }]} numberOfLines={2}>{itemName}</Text>}
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.label }]}
             value={value}
             onChangeText={(v) => {
               setValue(v);
@@ -52,21 +54,21 @@ export default function QuantityModal({ visible, itemName, initialValue = DEFAUL
             }}
             keyboardType="decimal-pad"
             placeholder="1.0"
-            placeholderTextColor="#666"
+            placeholderTextColor={colors.secondaryLabel}
             autoFocus
             selectTextOnFocus
             returnKeyType="done"
             onSubmitEditing={handleConfirm}
             onBlur={handleBlur}
           />
-          {!!error && <Text style={styles.error}>{error}</Text>}
-          <Text style={styles.hint}>One decimal place (e.g. 1.0, 3.0, 0.5)</Text>
+          {!!error && <Text style={[styles.error, { color: colors.destructive }]}>{error}</Text>}
+          <Text style={[styles.hint, { color: colors.secondaryLabel }]}>One decimal place (e.g. 1.0, 3.0, 0.5)</Text>
           <View style={styles.buttons}>
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onCancel}>
-              <Text style={styles.cancelText}>Cancel</Text>
+            <TouchableOpacity style={[styles.button, { backgroundColor: colors.inputBackground }]} onPress={onCancel}>
+              <Text style={[styles.cancelText, { color: colors.label }]}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={handleConfirm}>
-              <Text style={styles.confirmText}>{confirmLabel}</Text>
+            <TouchableOpacity style={[styles.button, { backgroundColor: colors.systemBlue }]} onPress={handleConfirm}>
+              <Text style={[styles.confirmText, { color: colors.onAccent }]}>{confirmLabel}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -85,23 +87,19 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 20,
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#034ea6',
   },
   subtitle: {
     fontSize: 14,
-    color: '#333',
     marginTop: 4,
   },
   input: {
     marginTop: 12,
-    backgroundColor: '#f0f0f3',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -110,13 +108,11 @@ const styles = StyleSheet.create({
   },
   error: {
     marginTop: 8,
-    color: '#ff3b30',
     fontSize: 13,
     textAlign: 'center',
   },
   hint: {
     marginTop: 8,
-    color: '#888',
     fontSize: 12,
     textAlign: 'center',
   },
@@ -131,19 +127,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
   },
-  cancelButton: {
-    backgroundColor: '#f0f0f3',
-  },
-  confirmButton: {
-    backgroundColor: '#007AFF',
-  },
   cancelText: {
-    color: '#333',
     fontWeight: '600',
     fontSize: 16,
   },
   confirmText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 16,
   },

@@ -1,31 +1,73 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Apple Human Interface Guidelines semantic colors.
+ * Names follow Apple's dynamic system colors (label, separators, grouped
+ * backgrounds) so the palette adapts to light/dark instead of hard-coding
+ * one appearance. Values are Apple's documented light/dark variants:
+ * system backgrounds white/black, cards white / #1C1C1E, blue #007AFF /
+ * #0A84FF (brighter in dark for contrast), red #FF3B30 / #FF453A.
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+export type AppColorScheme = 'light' | 'dark';
+export type AppearancePreference = 'system' | AppColorScheme;
+
+const tintColorLight = '#007AFF';
+const tintColorDark = '#0A84FF';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+    text: '#000000',
+    background: '#FFFFFF',
     tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    icon: '#3C3C43',
+    tabIconDefault: '#8E8E93',
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: '#FFFFFF',
+    background: '#000000',
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#EBEBF5',
+    tabIconDefault: '#8E8E93',
     tabIconSelected: tintColorDark,
   },
 };
+
+export const AppleSemanticColors = {
+  light: {
+    systemBackground: '#FFFFFF',
+    systemGroupedBackground: '#F2F2F7',
+    cardBackground: '#FFFFFF',
+    label: '#000000',
+    secondaryLabel: 'rgba(60,60,67,0.6)',
+    separator: '#C6C6C8',
+    systemBlue: '#007AFF',
+    destructive: '#FF3B30',
+    segmentedTrack: '#E5E5EA',
+    inputBackground: '#F0F0F3',
+    onAccent: '#FFFFFF',
+  },
+  dark: {
+    systemBackground: '#000000',
+    systemGroupedBackground: '#000000',
+    cardBackground: '#1C1C1E',
+    label: '#FFFFFF',
+    secondaryLabel: 'rgba(235,235,245,0.6)',
+    separator: '#38383A',
+    systemBlue: '#0A84FF',
+    destructive: '#FF453A',
+    segmentedTrack: '#2C2C2E',
+    inputBackground: '#2C2C2E',
+    onAccent: '#FFFFFF',
+  },
+} as const;
+
+export type AppleSemanticColorName = keyof typeof AppleSemanticColors.light;
+
+export function getAppleColors(scheme: AppColorScheme) {
+  return AppleSemanticColors[scheme === 'dark' ? 'dark' : 'light'];
+}
 
 export const Fonts = Platform.select({
   ios: {

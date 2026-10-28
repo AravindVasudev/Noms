@@ -1,5 +1,6 @@
 import { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel } from '@/lib/date';
 import { useBodyMass } from '@/hooks/use-body-mass';
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { convertWeightFromKg, formatWeight, roundWeight } from '@/lib/weight';
 import { KG_TO_LB, WeightUnit } from '@/lib/weight';
 import { useRouter } from 'expo-router';
@@ -47,6 +48,7 @@ export default function Insights() {
   const diary = useAppSelector(state => state.diary.diary);
   const goalsStrings = useAppSelector(state => state.goals);
   const insightsSettings = useAppSelector(state => state.insightsSettings);
+  const { colors } = useAppTheme();
 
   const goals = useMemo(() => ({
     calories: parseFloat(goalsStrings.calories) || 0,
@@ -249,8 +251,8 @@ export default function Insights() {
   const trainingBlock = !showTrainingBlock ? null : (
     <Fragment>
       <View>
-        <Text style={styles.weightTitle}>Training</Text>
-        <Text style={styles.weightValue}>
+        <Text style={[styles.weightTitle, { color: colors.label }]}>Training</Text>
+        <Text style={[styles.weightValue, { color: colors.label }]}>
           {trainingExerciseById.get(selectedTrainingExerciseId!)?.name ?? ''}
         </Text>
       </View>
@@ -260,10 +262,10 @@ export default function Insights() {
             <Pressable
               key={e!.id}
               onPress={() => setTrainingExerciseId(e!.id)}
-              style={[styles.trainingChip, e!.id === selectedTrainingExerciseId && styles.trainingChipSelected]}
+              style={[styles.trainingChip, { backgroundColor: colors.inputBackground }, e!.id === selectedTrainingExerciseId && { backgroundColor: colors.systemBlue }]}
             >
               <Text
-                style={[styles.trainingChipText, e!.id === selectedTrainingExerciseId && styles.trainingChipTextSelected]}
+                style={[styles.trainingChipText, { color: colors.secondaryLabel }, e!.id === selectedTrainingExerciseId && { color: colors.onAccent }]}
               >
                 {e!.name}
               </Text>
@@ -297,7 +299,7 @@ export default function Insights() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.systemGroupedBackground }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <DurationPicker
           label="Duration:"
@@ -317,22 +319,22 @@ export default function Insights() {
               <Fragment key="weight">
                 <View>
                   <View>
-                    <Text style={styles.weightTitle}>Weight</Text>
-                    <Text style={styles.weightValue}>
+                    <Text style={[styles.weightTitle, { color: colors.label }]}>Weight</Text>
+                    <Text style={[styles.weightValue, { color: colors.label }]}>
                       {formatWeight(bodyMass.latestKg as number, bodyMass.unit)}
-                      <Text style={styles.weightUnit}> {bodyMass.unit}</Text>
+                      <Text style={[styles.weightUnit, { color: colors.secondaryLabel }]}> {bodyMass.unit}</Text>
                     </Text>
                     {bodyMass.latestDate && (
-                      <Text style={styles.weightDate}>
+                      <Text style={[styles.weightDate, { color: colors.secondaryLabel }]}>
                         {bodyMass.latestDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                       </Text>
                     )}
                     {weightHistory?.stats && (
                       <>
-                        <Text style={styles.weightChange}>
+                        <Text style={[styles.weightChange, { color: colors.label }]}>
                           {weightHistory.stats.change > 0 ? '+' : ''}{weightHistory.stats.change} {bodyMass.unit} over last {selectedDurationLabel.toLowerCase()}
                         </Text>
-                        <Text style={styles.weightDate}>
+                        <Text style={[styles.weightDate, { color: colors.secondaryLabel }]}>
                           Low {weightHistory.stats.low} · High {weightHistory.stats.high} {bodyMass.unit}
                         </Text>
                       </>
@@ -371,21 +373,21 @@ export default function Insights() {
         })}
         {visibleMetrics.length === 0 && !showWeight && !showTrainingBlock && (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No graphs enabled</Text>
-            <Text style={styles.emptySubtitle}>Enable the graphs you want to see in Insights.</Text>
+            <Text style={[styles.emptyTitle, { color: colors.label }]}>No graphs enabled</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.secondaryLabel }]}>Enable the graphs you want to see in Insights.</Text>
             <Pressable
               onPress={() => router.push('/customize-insights')}
-              style={({ pressed }) => [styles.emptyButton, pressed && styles.emptyButtonPressed]}
+              style={({ pressed }) => [styles.emptyButton, { backgroundColor: colors.systemBlue }, pressed && styles.emptyButtonPressed]}
             >
-              <Text style={styles.emptyButtonText}>Customize Insights</Text>
+              <Text style={[styles.emptyButtonText, { color: colors.onAccent }]}>Customize Insights</Text>
             </Pressable>
           </View>
         )}
         {visibleMetrics.length > 0 && (
           <>
             <View style={styles.averagesHeader}>
-              <Text style={styles.averagesTitle}>Period Averages</Text>
-              <Text style={styles.averagesSubtitle}>Daily average over logged days · excludes today</Text>
+              <Text style={[styles.averagesTitle, { color: colors.label }]}>Period Averages</Text>
+              <Text style={[styles.averagesSubtitle, { color: colors.secondaryLabel }]}>Daily average over logged days · excludes today</Text>
             </View>
             {visibleMetrics.map((metric) => (
               <AverageCard
@@ -409,25 +411,23 @@ export default function Insights() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  container: { flex: 1, padding: 16 },
   scrollContent: { gap: 16, paddingBottom: 24 },
   emptyState: { alignItems: 'center', paddingVertical: 48, gap: 8 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
-  emptySubtitle: { fontSize: 14, color: '#636366', textAlign: 'center' },
-  emptyButton: { marginTop: 12, backgroundColor: '#007AFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '600' },
+  emptySubtitle: { fontSize: 14, textAlign: 'center' },
+  emptyButton: { marginTop: 12, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20 },
   emptyButtonPressed: { opacity: 0.85 },
-  emptyButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  emptyButtonText: { fontSize: 16, fontWeight: '600' },
   averagesHeader: { marginTop: 8, gap: 2 },
-  averagesTitle: { fontSize: 20, fontWeight: '700', color: '#000' },
-  averagesSubtitle: { fontSize: 14, color: '#636366' },
-  weightTitle: { fontSize: 20, fontWeight: '700', color: '#000' },
-  weightValue: { fontSize: 32, fontWeight: '700', color: '#000', marginTop: 2 },
-  weightUnit: { fontSize: 18, fontWeight: '500', color: '#636366' },
-  weightDate: { fontSize: 14, color: '#636366', marginTop: 2 },
-  weightChange: { fontSize: 14, fontWeight: '600', color: '#000', marginTop: 4 },
+  averagesTitle: { fontSize: 20, fontWeight: '700' },
+  averagesSubtitle: { fontSize: 14 },
+  weightTitle: { fontSize: 20, fontWeight: '700' },
+  weightValue: { fontSize: 32, fontWeight: '700', marginTop: 2 },
+  weightUnit: { fontSize: 18, fontWeight: '500' },
+  weightDate: { fontSize: 14, marginTop: 2 },
+  weightChange: { fontSize: 14, fontWeight: '600', marginTop: 4 },
   trainingChips: { flexDirection: 'row', gap: 8 },
-  trainingChip: { backgroundColor: '#f0f0f3', borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
-  trainingChipSelected: { backgroundColor: '#007AFF' },
-  trainingChipText: { fontSize: 14, fontWeight: '500', color: '#344054' },
-  trainingChipTextSelected: { color: '#ffffff' },
+  trainingChip: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
+  trainingChipText: { fontSize: 14, fontWeight: '500' },
 });

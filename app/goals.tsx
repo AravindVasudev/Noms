@@ -1,6 +1,7 @@
 import { setGoalsAsync } from '@/lib/goalsSlice';
 import { setSignedUpAsync } from '@/lib/profileSlice';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
@@ -11,6 +12,7 @@ export default function GoalsScreen() {
   const { from } = useLocalSearchParams();
   const dispatch = useAppDispatch();
   const goals = useAppSelector(state => state.goals);
+  const { colors } = useAppTheme();
 
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -69,46 +71,46 @@ export default function GoalsScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.systemBackground }}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-          <View style={styles.container}>
-            <Text style={styles.title}>Set Daily Goals</Text>
+          <View style={[styles.container, { backgroundColor: colors.systemBackground }]}>
+            <Text style={[styles.title, { color: colors.label }]}>Set Daily Goals</Text>
 
-            <TouchableOpacity style={styles.tdeeButton} onPress={() => router.push('/tdee-calculator')}>
-              <Text style={styles.tdeeText}>Use TDEE Calculator</Text>
+            <TouchableOpacity style={[styles.tdeeButton, { backgroundColor: colors.systemBlue }]} onPress={() => router.push('/tdee-calculator')}>
+              <Text style={[styles.tdeeText, { color: colors.onAccent }]}>Use TDEE Calculator</Text>
             </TouchableOpacity>
 
             <View style={styles.fieldRow}>
-              <Text style={[styles.label, styles.labelInline]}>TDEE (kcal)</Text>
-              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.tdee} onChangeText={(v) => setLocalGoals((p) => ({ ...p, tdee: v }))} />
+              <Text style={[styles.label, styles.labelInline, { color: colors.label }]}>TDEE (kcal)</Text>
+              <TextInput style={[styles.input, styles.inputInline, { backgroundColor: colors.inputBackground, color: colors.label }]} keyboardType="numeric" placeholderTextColor={colors.secondaryLabel} value={localGoals.tdee} onChangeText={(v) => setLocalGoals((p) => ({ ...p, tdee: v }))} />
             </View>
-            <Text style={styles.hint}>Days between your goal and TDEE show yellow in the diary calendar.</Text>
+            <Text style={[styles.hint, { color: colors.secondaryLabel }]}>Days between your goal and TDEE show yellow in the diary calendar.</Text>
 
             <View style={styles.fieldRow}>
-              <Text style={[styles.label, styles.labelInline]}>Calories</Text>
-              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.calories} onChangeText={(v) => setLocalGoals((p) => ({ ...p, calories: v }))} />
-            </View>
-
-            <View style={styles.fieldRow}>
-              <Text style={[styles.label, styles.labelInline]}>Protein (g)</Text>
-              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.protein} onChangeText={(v) => setLocalGoals((p) => ({ ...p, protein: v }))} />
+              <Text style={[styles.label, styles.labelInline, { color: colors.label }]}>Calories</Text>
+              <TextInput style={[styles.input, styles.inputInline, { backgroundColor: colors.inputBackground, color: colors.label }]} keyboardType="numeric" placeholderTextColor={colors.secondaryLabel} value={localGoals.calories} onChangeText={(v) => setLocalGoals((p) => ({ ...p, calories: v }))} />
             </View>
 
             <View style={styles.fieldRow}>
-              <Text style={[styles.label, styles.labelInline]}>Fiber (g)</Text>
-              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.fiber} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fiber: v }))} />
+              <Text style={[styles.label, styles.labelInline, { color: colors.label }]}>Protein (g)</Text>
+              <TextInput style={[styles.input, styles.inputInline, { backgroundColor: colors.inputBackground, color: colors.label }]} keyboardType="numeric" placeholderTextColor={colors.secondaryLabel} value={localGoals.protein} onChangeText={(v) => setLocalGoals((p) => ({ ...p, protein: v }))} />
             </View>
 
             <View style={styles.fieldRow}>
-              <Text style={[styles.label, styles.labelInline]}>Fat (g)</Text>
-              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.fat} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fat: v }))} />
+              <Text style={[styles.label, styles.labelInline, { color: colors.label }]}>Fiber (g)</Text>
+              <TextInput style={[styles.input, styles.inputInline, { backgroundColor: colors.inputBackground, color: colors.label }]} keyboardType="numeric" placeholderTextColor={colors.secondaryLabel} value={localGoals.fiber} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fiber: v }))} />
             </View>
 
             <View style={styles.fieldRow}>
-              <Text style={[styles.label, styles.labelInline]}>Carbs (g)</Text>
-              <TextInput style={[styles.input, styles.inputInline]} keyboardType="numeric" value={localGoals.carbs} onChangeText={(v) => setLocalGoals((p) => ({ ...p, carbs: v }))} />
+              <Text style={[styles.label, styles.labelInline, { color: colors.label }]}>Fat (g)</Text>
+              <TextInput style={[styles.input, styles.inputInline, { backgroundColor: colors.inputBackground, color: colors.label }]} keyboardType="numeric" placeholderTextColor={colors.secondaryLabel} value={localGoals.fat} onChangeText={(v) => setLocalGoals((p) => ({ ...p, fat: v }))} />
+            </View>
+
+            <View style={styles.fieldRow}>
+              <Text style={[styles.label, styles.labelInline, { color: colors.label }]}>Carbs (g)</Text>
+              <TextInput style={[styles.input, styles.inputInline, { backgroundColor: colors.inputBackground, color: colors.label }]} keyboardType="numeric" placeholderTextColor={colors.secondaryLabel} value={localGoals.carbs} onChangeText={(v) => setLocalGoals((p) => ({ ...p, carbs: v }))} />
             </View>
 
             <View style={styles.buttons}>
@@ -118,9 +120,9 @@ export default function GoalsScreen() {
           </View>
         </ScrollView>
         {keyboardVisible && (
-          <View style={[styles.keyboardAccessory, { bottom: keyboardHeight }]}>
+          <View style={[styles.keyboardAccessory, { bottom: keyboardHeight, backgroundColor: colors.systemGroupedBackground, borderColor: colors.separator }]}>
             <TouchableOpacity onPress={() => Keyboard.dismiss()} style={styles.doneButton}>
-              <Text style={styles.doneText}>Done</Text>
+              <Text style={[styles.doneText, { color: colors.systemBlue }]}>Done</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -132,29 +134,27 @@ export default function GoalsScreen() {
 
 const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, justifyContent: 'center', paddingBottom: 100 },
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: '#034ea6' },
-  label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6, color: '#034ea6' },
-  hint: { fontSize: 12, color: '#666', marginBottom: 4 },
-  input: { borderWidth: 0, backgroundColor: '#f0f0f3', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 12 },
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
+  label: { fontSize: 14, fontWeight: '600', marginTop: 8, marginBottom: 6 },
+  hint: { fontSize: 12, marginBottom: 4 },
+  input: { borderWidth: 0, borderRadius: 20, paddingVertical: 10, paddingHorizontal: 12 },
   buttons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   fieldRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 8 },
   labelInline: { marginTop: 0, marginBottom: 0, marginRight: 12, minWidth: 90 },
   inputInline: { flex: 1, paddingVertical: 10 },
-  tdeeButton: { backgroundColor: '#007AFF', borderRadius: 20, paddingVertical: 12, alignItems: 'center', marginBottom: 12 },
-  tdeeText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  tdeeButton: { borderRadius: 20, paddingVertical: 12, alignItems: 'center', marginBottom: 12 },
+  tdeeText: { fontWeight: '600', fontSize: 16 },
   keyboardAccessory: {
     position: 'absolute',
     left: 0,
     right: 0,
     height: 44,
-    backgroundColor: '#f1f1f1',
     alignItems: 'flex-end',
     justifyContent: 'center',
     paddingHorizontal: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: '#ccc',
   },
   doneButton: { paddingHorizontal: 12, paddingVertical: 6 },
-  doneText: { color: '#007AFF', fontWeight: '600', fontSize: 16 },
+  doneText: { fontWeight: '600', fontSize: 16 },
 });

@@ -2,11 +2,13 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Redirect, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
+import { Appearance } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { initializeAppearance } from '@/lib/appearanceSlice';
 import { initializeCatalog } from '@/lib/catalogSlice';
 import { initializeDiary } from '@/lib/diarySlice';
 import { initializeGoals } from '@/lib/goalsSlice';
@@ -21,7 +23,10 @@ export const unstable_settings = {
 };
 
 function AppContent() {
-  const colorScheme = useColorScheme();
+  const systemScheme = useColorScheme();
+  const appearancePreference = useAppSelector((state) => state.appearance.preference);
+  const effectiveScheme = appearancePreference === 'system' ? (systemScheme ?? 'light') : appearancePreference;
+  const resolvedScheme = effectiveScheme === 'dark' ? 'dark' : 'light';
   const dispatch = useAppDispatch();
   const signedUp = useAppSelector((state) => state.profile.signedUp);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -35,18 +40,30 @@ function AppContent() {
         dispatch(initializeCatalog()),
         dispatch(initializeInsightsSettings()),
         dispatch(initializeTraining()),
+        dispatch(initializeAppearance()),
       ]);
       setIsInitialized(true);
     };
     initialize();
   }, [dispatch]);
 
+  // Push the app-level choice down to the OS so native surfaces
+  // (tab bar, sheets) follow Light/Dark, or revert to the system
+  // setting when preference is System.
+  useEffect(() => {
+    try {
+      Appearance.setColorScheme(appearancePreference === 'system' ? null : appearancePreference);
+    } catch {
+      // Non-fatal: system UI just won't follow the override.
+    }
+  }, [appearancePreference]);
+
   if (!isInitialized) {
     return null;
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={resolvedScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -61,7 +78,7 @@ function AppContent() {
           <Stack.Screen name="workout" options={{ headerShown: false }} />
         </Stack>
         <MiniWorkoutBar />
-        <StatusBar style="auto" />
+        <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
         {!signedUp && <Redirect href="/signup" />}
       </GestureHandlerRootView>
     </ThemeProvider>

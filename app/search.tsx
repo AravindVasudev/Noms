@@ -5,6 +5,7 @@ import catalogStore, { CatalogRow } from '@/lib/catalog-store';
 import { addEntryAsync } from '@/lib/diarySlice';
 import { DEFAULT_QUANTITY } from '@/lib/quantity';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -15,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function SearchScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { colors } = useAppTheme();
   const { date: paramDate } = useLocalSearchParams();
   const catalog = useAppSelector(state => state.catalog.catalog);
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,7 +101,7 @@ export default function SearchScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.systemBackground }]}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <View style={styles.header}>
@@ -109,31 +111,31 @@ export default function SearchScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={22} color="#007AFF" />
-          <Text style={styles.backText}>Back</Text>
+          <Ionicons name="chevron-back" size={22} color={colors.systemBlue} />
+          <Text style={[styles.backText, { color: colors.systemBlue }]}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Catalog</Text>
+        <Text style={[styles.headerTitle, { color: colors.label }]}>Catalog</Text>
         <View style={styles.headerSpacer} />
       </View>
       <View style={styles.searchContainer}>
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { backgroundColor: colors.inputBackground, color: colors.label }]}
           placeholder="Search catalog..."
-          placeholderTextColor="#666"
+          placeholderTextColor={colors.secondaryLabel}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         <TouchableOpacity 
-          style={styles.barcodeButton}
+          style={[styles.barcodeButton, { backgroundColor: colors.systemBlue }]}
           onPress={() => setScannerVisible(true)}
         >
-          <SymbolView name="barcode.viewfinder" size={20} tintColor="#fff" />
+          <SymbolView name="barcode.viewfinder" size={20} tintColor={colors.onAccent} />
         </TouchableOpacity>
         <TouchableOpacity 
-          style={styles.addButton}
+          style={[styles.addButton, { backgroundColor: colors.systemBlue }]}
           onPress={() => router.push({ pathname: '/add', params: paramDate ? { date: paramDate } : {} })}
         >
-          <Text style={styles.addButtonText}>+</Text>
+          <Text style={[styles.addButtonText, { color: colors.onAccent }]}>+</Text>
         </TouchableOpacity>
       </View>
       {filteredCatalog.length === 0 ? (
@@ -142,15 +144,15 @@ export default function SearchScreen() {
           onPress={() => router.push({ pathname: '/add', params: paramDate ? { date: paramDate } : {} })}
           accessibilityRole="button"
         >
-          <Text style={styles.emptyText}>Catalog is empty. Click here to add.</Text>
+          <Text style={[styles.emptyText, { color: colors.secondaryLabel }]}>Catalog is empty. Click here to add.</Text>
         </Pressable>
       ) : (
         <CatalogEntries items={filteredCatalog} date={paramDate ? new Date(paramDate as string) : new Date()} showAlphaScroller={!isSearching} />
       )}
       {keyboardVisible && (
-        <View style={[styles.keyboardAccessory, { bottom: keyboardHeight }]}>
+        <View style={[styles.keyboardAccessory, { bottom: keyboardHeight, backgroundColor: colors.systemGroupedBackground, borderColor: colors.separator }]}>
           <TouchableOpacity onPress={() => Keyboard.dismiss()} style={styles.doneButton}>
-            <Text style={styles.doneText}>Done</Text>
+            <Text style={[styles.doneText, { color: colors.systemBlue }]}>Done</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -175,7 +177,6 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
@@ -191,14 +192,12 @@ const styles = StyleSheet.create({
     minWidth: 70,
   },
   backText: {
-    color: '#007AFF',
     fontSize: 17,
     marginLeft: -4,
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000',
   },
   headerSpacer: {
     minWidth: 70,
@@ -213,7 +212,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderWidth: 0,
-    backgroundColor: '#f0f0f3',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -223,12 +221,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#007AFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   addButtonText: {
-    color: '#fff',
     fontSize: 24,
     lineHeight: 26,
     fontWeight: '600',
@@ -237,12 +233,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#007AFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   barcodeButtonText: {
-    color: '#fff',
     fontSize: 24,
     lineHeight: 26,
     fontWeight: '600',
@@ -252,22 +246,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 44,
-    backgroundColor: '#f1f1f1',
     alignItems: 'flex-end',
     justifyContent: 'center',
     paddingHorizontal: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: '#ccc',
   },
   doneButton: { paddingHorizontal: 12, paddingVertical: 6 },
-  doneText: { color: '#007AFF', fontWeight: '600', fontSize: 16 },
+  doneText: { fontWeight: '600', fontSize: 16 },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emptyText: {
-    color: '#888',
     fontSize: 16,
   },
 });

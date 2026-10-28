@@ -3,6 +3,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useWorkoutElapsed } from '@/hooks/use-workout-elapsed';
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { pauseWorkoutAsync, resumeWorkoutAsync } from '@/lib/trainingSlice';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { formatElapsed } from '@/lib/workout-time';
@@ -16,6 +17,7 @@ export function MiniWorkoutBar() {
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useAppDispatch();
+  const { colors } = useAppTheme();
   const activeWorkout = useAppSelector((state) => state.training.activeWorkout);
   const allSets = useAppSelector((state) => state.training.sets);
   const activeSets = React.useMemo(
@@ -40,7 +42,7 @@ export function MiniWorkoutBar() {
 
   return (
     <View style={styles.wrapper} pointerEvents="box-none">
-      <View style={styles.bar}>
+      <View style={[styles.bar, { backgroundColor: colors.cardBackground }]}>
         <Pressable
           style={styles.main}
           onPress={() => router.push('/workout')}
@@ -48,10 +50,10 @@ export function MiniWorkoutBar() {
         >
           <View style={[styles.dot, paused && styles.dotPaused]} />
           <View>
-            <Text style={styles.timer}>
+            <Text style={[styles.timer, { color: colors.label }]}>
               {formatElapsed(elapsed)}{paused ? ' · Paused' : ''}
             </Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: colors.secondaryLabel }]}>
               {exerciseCount === 1 ? '1 exercise' : `${exerciseCount} exercises`} · tap to resume
             </Text>
           </View>
@@ -62,7 +64,7 @@ export function MiniWorkoutBar() {
           accessibilityRole="button"
           accessibilityLabel={paused ? 'Resume workout' : 'Pause workout'}
         >
-          <Text style={styles.pauseText}>{paused ? '▶' : '❚❚'}</Text>
+          <Text style={[styles.pauseText, { color: colors.systemBlue }]}>{paused ? '▶' : '❚❚'}</Text>
         </Pressable>
       </View>
     </View>
@@ -79,7 +81,6 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -105,13 +106,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFCC00',
   },
   timer: {
-    color: '#000',
     fontSize: 16,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   subtitle: {
-    color: '#636366',
     fontSize: 12,
   },
   pauseButton: {
@@ -122,7 +121,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   pauseText: {
-    color: '#007AFF',
     fontSize: 16,
     fontWeight: '700',
   },

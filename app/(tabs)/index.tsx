@@ -1,6 +1,7 @@
 import JournalEntries from '@/components/ui/journal-entries';
 import { formatDateKey } from '@/lib/date';
 import { useAppSelector } from '@/lib/store';
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
@@ -11,6 +12,7 @@ import DatePicker from '../../components/ui/date-picker';
 
 export default function Diary() {
   const router = useRouter();
+  const { colors } = useAppTheme();
   const diary = useAppSelector(state => state.diary.diary);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const filteredDiary = useMemo(() => {
@@ -32,7 +34,7 @@ export default function Diary() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.systemBackground }]}>
         <DatePicker value={selectedDate} onChange={setSelectedDate} />
         <Aggregates totals={totals} onAdd={() => router.push({ pathname: '/search', params: { date: selectedDate.toISOString() } })} />
         {filteredDiary.length === 0 ? (
@@ -41,7 +43,7 @@ export default function Diary() {
             onPress={() => router.push({ pathname: '/search', params: { date: selectedDate.toISOString() } })}
             accessibilityRole="button"
           >
-            <Text style={styles.emptyText}>No food logged. Click here to add.</Text>
+            <Text style={[styles.emptyText, { color: colors.secondaryLabel }]}>No food logged. Click here to add.</Text>
           </Pressable>
         ) : (
           <JournalEntries selectedDate={selectedDate} />
@@ -53,7 +55,6 @@ export default function Diary() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 16,
   },
   emptyContainer: {
@@ -62,7 +63,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#888',
     fontSize: 16,
   },
 });

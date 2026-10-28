@@ -3,6 +3,7 @@ import { removeCatalogItemAsync } from '@/lib/catalogSlice';
 import { addEntryAsync } from '@/lib/diarySlice';
 import { DEFAULT_QUANTITY } from '@/lib/quantity';
 import { useAppDispatch } from '@/lib/store';
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import React, { useMemo, useRef, useState } from 'react';
@@ -58,6 +59,7 @@ function buildSections(items: CatalogRow[]): { title: string; data: CatalogRow[]
 export default function CatalogEntries({ items, date, showAlphaScroller = true }: Props) {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const { colors } = useAppTheme();
   const [pendingItem, setPendingItem] = useState<CatalogRow | null>(null);
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const listRef = useRef<FlatList<ListRow>>(null);
@@ -157,14 +159,14 @@ export default function CatalogEntries({ items, date, showAlphaScroller = true }
   const renderRight = (item: CatalogRow) => {
     const Component = () => (
       <RectButton
-        style={styles.rightAction}
+        style={[styles.rightAction, { backgroundColor: colors.destructive }]}
         onPress={() => {
           if (item && item.id != null) {
             dispatch(removeCatalogItemAsync(item.id));
           }
         }}
       >
-        <Text style={styles.actionText}>✕</Text>
+        <Text style={[styles.actionText, { color: colors.onAccent }]}>✕</Text>
       </RectButton>
     );
     Component.displayName = 'RightAction';
@@ -181,18 +183,18 @@ export default function CatalogEntries({ items, date, showAlphaScroller = true }
     return (
       <Swipeable renderRightActions={renderRight(item)}>
         <TouchableOpacity onPress={() => handleItemPress(item)}>
-          <View style={styles.item}>
+          <View style={[styles.item, { borderBottomColor: colors.separator, backgroundColor: colors.systemBackground }]}>
             <View style={styles.itemContent}>
               <View style={styles.itemText}>
-                <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{name}</Text>
-                <Text style={styles.calories} numberOfLines={1} ellipsizeMode="tail">{calories} Cal</Text>
-                <Text style={styles.details} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[styles.name, { color: colors.systemBlue }]} numberOfLines={1} ellipsizeMode="tail">{name}</Text>
+                <Text style={[styles.calories, { color: colors.systemBlue }]} numberOfLines={1} ellipsizeMode="tail">{calories} Cal</Text>
+                <Text style={[styles.details, { color: colors.systemBlue }]} numberOfLines={1} ellipsizeMode="tail">
                   (F: {fat}g  C: {carbs}g  P: {protein}g  Fi: {fiber}g)
                 </Text>
               </View>
               {item.barcode && (
                 <View style={styles.barcodeContainer}>
-                  <SymbolView name="barcode.viewfinder" size={20} tintColor="#034ea6" />
+                  <SymbolView name="barcode.viewfinder" size={20} tintColor={colors.systemBlue} />
                 </View>
               )}
             </View>
@@ -215,8 +217,8 @@ export default function CatalogEntries({ items, date, showAlphaScroller = true }
         }
         renderItem={({ item }) =>
           item.kind === 'header' ? (
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionHeaderText}>{item.title}</Text>
+            <View style={[styles.sectionHeader, { backgroundColor: colors.systemGroupedBackground }]}>
+              <Text style={[styles.sectionHeaderText, { color: colors.secondaryLabel }]}>{item.title}</Text>
             </View>
           ) : (
             renderCatalogRow(item.item)
@@ -256,7 +258,8 @@ export default function CatalogEntries({ items, date, showAlphaScroller = true }
                 <Text
                   style={[
                     styles.scrollerLetter,
-                    !hasSection && styles.scrollerLetterMissing,
+                    { color: colors.systemBlue },
+                    !hasSection && { color: colors.separator },
                     isActive && hasSection && styles.scrollerLetterActive,
                   ]}
                 >
@@ -288,7 +291,6 @@ const styles = StyleSheet.create({
     paddingRight: 28,
   },
   sectionHeader: {
-    backgroundColor: '#f2f2f7',
     height: SECTION_HEADER_HEIGHT,
     justifyContent: 'center',
     paddingHorizontal: 16,
@@ -296,7 +298,6 @@ const styles = StyleSheet.create({
   sectionHeaderText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#666',
   },
   scroller: {
     position: 'absolute',
@@ -317,15 +318,9 @@ const styles = StyleSheet.create({
   scrollerLetter: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#007AFF',
     lineHeight: 14,
   },
-  scrollerLetterMissing: {
-    color: '#c7c7cc',
-    fontWeight: '400',
-  },
   scrollerLetterActive: {
-    color: '#034ea6',
     fontWeight: '800',
   },
   item: {
@@ -333,8 +328,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#fff',
   },
   itemContent: {
     flexDirection: 'row',
@@ -351,26 +344,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 2,
-    color: '#034ea6',
   },
   calories: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#034ea6',
   },
   details: {
     fontSize: 12,
-    color: '#034ea6',
     marginTop: 4,
   },
   rightAction: {
-    backgroundColor: '#ff3b30',
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
   },
   actionText: {
-    color: '#fff',
     fontSize: 20,
     fontWeight: '700',
   },

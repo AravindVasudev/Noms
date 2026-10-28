@@ -1,3 +1,4 @@
+import { useAppTheme } from '@/hooks/use-app-theme';
 import React from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
@@ -12,19 +13,22 @@ interface DurationPickerProps {
 }
 
 export function DurationPicker({ label = 'Duration:', value, options, onChange, style }: DurationPickerProps) {
+  const { colors } = useAppTheme();
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.durationLabel}>{label}</Text>
-      <View style={styles.navbar}>
+      <Text style={[styles.durationLabel, { color: colors.label }]}>{label}</Text>
+      <View style={[styles.navbar, { backgroundColor: colors.segmentedTrack }]}>
         {options.map((opt) => {
           const selected = opt.value === value;
           return (
             <Pressable
               key={opt.value}
               onPress={() => onChange(opt.value)}
-              style={[styles.navItem, selected && styles.navItemSelected]}
+              style={[styles.navItem, selected && { backgroundColor: colors.systemBlue }]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
             >
-              <Text style={[styles.navText, selected && styles.navTextSelected]}>{opt.label}</Text>
+              <Text style={[styles.navText, { color: colors.secondaryLabel }, selected && { color: colors.onAccent }]}>{opt.label}</Text>
             </Pressable>
           );
         })}
@@ -43,7 +47,6 @@ const styles = StyleSheet.create({
   durationLabel: { fontSize: 14, fontWeight: '500' },
   navbar: {
     flexDirection: 'row',
-    backgroundColor: '#f2f4f7',
     borderRadius: 999,
     padding: 4,
     gap: 4,
@@ -53,11 +56,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 999,
   },
-  navItemSelected: {
-    backgroundColor: '#2296f3',
-  },
-  navText: { fontSize: 14, fontWeight: '500', color: '#344054' },
-  navTextSelected: { color: '#ffffff' },
+  navText: { fontSize: 14, fontWeight: '500' },
 });
 
 export default DurationPicker;

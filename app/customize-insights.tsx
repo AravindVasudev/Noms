@@ -1,3 +1,4 @@
+import { useAppTheme } from '@/hooks/use-app-theme';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
@@ -25,6 +26,7 @@ const METRIC_LABELS: Record<InsightMetricId, string> = {
 export default function CustomizeInsightsScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { colors } = useAppTheme();
   const settings = useAppSelector((state) => state.insightsSettings);
 
   const handleToggle = (id: InsightMetricId, value: boolean) => {
@@ -45,36 +47,36 @@ export default function CustomizeInsightsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.systemGroupedBackground }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Customize Insights</Text>
-        <Text style={styles.subtitle}>Choose which graphs appear in Insights and the order they show in.</Text>
+        <Text style={[styles.title, { color: colors.label }]}>Customize Insights</Text>
+        <Text style={[styles.subtitle, { color: colors.secondaryLabel }]}>Choose which graphs appear in Insights and the order they show in.</Text>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
           {settings.order.map((id, index) => {
             const isFirst = index === 0;
             const isLast = index === settings.order.length - 1;
             return (
-              <View key={id} style={[styles.row, index < settings.order.length - 1 && styles.rowBorder]}>
+              <View key={id} style={[styles.row, index < settings.order.length - 1 && styles.rowBorder, index < settings.order.length - 1 && { borderBottomColor: colors.separator }]}>
                 <View style={styles.labelWrap}>
-                  <Text style={styles.label}>{METRIC_LABELS[id]}</Text>
+                  <Text style={[styles.label, { color: colors.label }]}>{METRIC_LABELS[id]}</Text>
                 </View>
                 <View style={styles.controls}>
                   <Pressable
                     accessibilityLabel={`Move ${METRIC_LABELS[id]} up`}
                     disabled={isFirst}
                     onPress={() => handleMove(index, -1)}
-                    style={({ pressed }) => [styles.arrowButton, isFirst && styles.arrowDisabled, pressed && !isFirst && styles.arrowPressed]}
+                    style={({ pressed }) => [styles.arrowButton, { backgroundColor: colors.inputBackground }, isFirst && styles.arrowDisabled, pressed && !isFirst && styles.arrowPressed]}
                   >
-                    <Text style={[styles.arrowText, isFirst && styles.arrowTextDisabled]}>↑</Text>
+                    <Text style={[styles.arrowText, { color: colors.systemBlue }, isFirst && [styles.arrowTextDisabled, { color: colors.separator }]]}>↑</Text>
                   </Pressable>
                   <Pressable
                     accessibilityLabel={`Move ${METRIC_LABELS[id]} down`}
                     disabled={isLast}
                     onPress={() => handleMove(index, 1)}
-                    style={({ pressed }) => [styles.arrowButton, isLast && styles.arrowDisabled, pressed && !isLast && styles.arrowPressed]}
+                    style={({ pressed }) => [styles.arrowButton, { backgroundColor: colors.inputBackground }, isLast && styles.arrowDisabled, pressed && !isLast && styles.arrowPressed]}
                   >
-                    <Text style={[styles.arrowText, isLast && styles.arrowTextDisabled]}>↓</Text>
+                    <Text style={[styles.arrowText, { color: colors.systemBlue }, isLast && [styles.arrowTextDisabled, { color: colors.separator }]]}>↓</Text>
                   </Pressable>
                   <Switch value={settings.visible[id]} onValueChange={(value) => handleToggle(id, value)} />
                 </View>
@@ -83,12 +85,12 @@ export default function CustomizeInsightsScreen() {
           })}
         </View>
 
-        <Pressable onPress={handleReset} style={({ pressed }) => [styles.resetButton, pressed && styles.resetPressed]}>
-          <Text style={styles.resetText}>Reset to defaults</Text>
+        <Pressable onPress={handleReset} style={({ pressed }) => [styles.resetButton, { backgroundColor: colors.cardBackground }, pressed && styles.resetPressed]}>
+          <Text style={[styles.resetText, { color: colors.systemBlue }]}>Reset to defaults</Text>
         </Pressable>
 
-        <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.doneButton, pressed && styles.donePressed]}>
-          <Text style={styles.doneText}>Done</Text>
+        <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.doneButton, { backgroundColor: colors.systemBlue }, pressed && styles.donePressed]}>
+          <Text style={[styles.doneText, { color: colors.onAccent }]}>Done</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -98,7 +100,6 @@ export default function CustomizeInsightsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f2f2f7',
   },
   scrollContent: {
     padding: 16,
@@ -108,17 +109,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 4,
-    color: '#034ea6',
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
-    color: '#636366',
     textAlign: 'center',
     marginBottom: 16,
   },
   section: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -136,14 +134,12 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e5ea',
   },
   labelWrap: {
     flex: 1,
   },
   label: {
     fontSize: 17,
-    color: '#000',
   },
   controls: {
     flexDirection: 'row',
@@ -156,40 +152,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
-    backgroundColor: '#f0f0f3',
   },
   arrowPressed: {
-    backgroundColor: '#e5e5ea',
+    opacity: 0.7,
   },
   arrowDisabled: {
     opacity: 0.4,
   },
   arrowText: {
     fontSize: 16,
-    color: '#034ea6',
     fontWeight: '600',
   },
   arrowTextDisabled: {
-    color: '#c7c7cc',
+    fontSize: 16,
+    fontWeight: '600',
   },
   resetButton: {
     marginTop: 16,
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
   resetPressed: {
-    backgroundColor: '#e5e5ea',
+    opacity: 0.7,
   },
   resetText: {
     fontSize: 16,
-    color: '#007AFF',
     fontWeight: '600',
   },
   doneButton: {
     marginTop: 12,
-    backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -199,7 +191,6 @@ const styles = StyleSheet.create({
   },
   doneText: {
     fontSize: 16,
-    color: '#fff',
     fontWeight: '600',
   },
 });

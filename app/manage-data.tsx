@@ -6,6 +6,8 @@ import React from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SettingsItem from '../components/ui/settings-item';
+import { useAppTheme } from '@/hooks/use-app-theme';
+import { clearAllAsync as clearAppearance, setAppearance } from '../lib/appearanceSlice';
 import { clearAllAsync as clearCatalog, setCatalog } from '../lib/catalogSlice';
 import { clearAllAsync as clearDiary, setDiary } from '../lib/diarySlice';
 import { clearAllAsync as clearGoals, setGoalsAsync } from '../lib/goalsSlice';
@@ -23,6 +25,8 @@ export default function ManageData() {
   const diary = useAppSelector((state) => state.diary);
   const insightsSettings = useAppSelector((state) => state.insightsSettings);
   const training = useAppSelector((state) => state.training);
+  const appearance = useAppSelector((state) => state.appearance);
+  const { colors } = useAppTheme();
 
   const handleExportData = () => {
     Alert.alert(
@@ -41,6 +45,7 @@ export default function ManageData() {
                 catalog,
                 diary,
                 insightsSettings,
+                appearance,
                 training: {
                   exercises: training.exercises,
                   workouts: training.workouts,
@@ -117,6 +122,9 @@ export default function ManageData() {
               if ('insightsSettings' in importedData) {
                 await dispatch(setInsightsSettings(importedData.insightsSettings));
               }
+              if ('appearance' in importedData) {
+                await dispatch(setAppearance(importedData.appearance));
+              }
               if ('training' in importedData && importedData.training) {
                 await dispatch(
                   setTrainingData({
@@ -155,6 +163,7 @@ export default function ManageData() {
             await dispatch(clearProfile());
             await dispatch(clearInsightsSettings());
             await dispatch(clearTrainingAsync());
+            await dispatch(clearAppearance());
 
             Alert.alert('Data Cleared', 'All app data has been cleared.');
             router.replace('/signup');
@@ -165,17 +174,17 @@ export default function ManageData() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Manage Data</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.systemGroupedBackground }]}>
+      <Text style={[styles.title, { color: colors.label }]}>Manage Data</Text>
 
       {/* Data Management Options */}
-      <View style={styles.section}>
+      <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
         <SettingsItem title="Import App Data" onPress={handleImportData} />
       </View>
-      <View style={styles.section}>
+      <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
         <SettingsItem title="Export App Data" onPress={handleExportData} />
       </View>
-      <View style={styles.section}>
+      <View style={[styles.section, { backgroundColor: colors.cardBackground }]}>
         <SettingsItem title="Clear App Data" onPress={handleClearAppData} destructive />
       </View>
     </SafeAreaView>
@@ -185,18 +194,15 @@ export default function ManageData() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f2f2f7',
     padding: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 12,
-    color: '#034ea6',
     textAlign: 'center',
   },
   section: {
-    backgroundColor: '#ffffff',
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 12,

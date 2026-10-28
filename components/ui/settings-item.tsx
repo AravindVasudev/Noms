@@ -1,3 +1,4 @@
+import { useAppTheme } from '@/hooks/use-app-theme';
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
@@ -8,13 +9,17 @@ interface SettingsItemProps {
 }
 
 export default function SettingsItem({ title, onPress, destructive = false }: SettingsItemProps) {
+  const { colors } = useAppTheme();
   return (
     <Pressable
-      style={({ pressed }) => [styles.settingItem, pressed && styles.settingItemPressed]}
+      style={({ pressed }) => [
+        styles.settingItem,
+        { backgroundColor: pressed ? colors.systemGroupedBackground : colors.cardBackground },
+      ]}
       onPress={onPress}
     >
-      <Text style={[styles.settingText, destructive && styles.destructiveText]}>{title}</Text>
-      <Text style={styles.chevron}>›</Text>
+      <Text style={[styles.settingText, { color: destructive ? colors.destructive : colors.label }]}>{title}</Text>
+      <Text style={[styles.chevron, { color: colors.separator }]}>›</Text>
     </Pressable>
   );
 }
@@ -26,21 +31,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: '#ffffff',
-  },
-  settingItemPressed: {
-    backgroundColor: '#f2f2f7',
   },
   settingText: {
     fontSize: 17,
-    color: '#000',
-  },
-  destructiveText: {
-    color: '#ff3b30',
   },
   chevron: {
     fontSize: 24,
-    color: '#c7c7cc',
     fontWeight: '400',
   },
 });
