@@ -100,18 +100,50 @@ const discardWorkoutAsync = createAsyncThunk(
   }
 );
 
+const createExerciseAsync = createAsyncThunk(
+  'training/createExercise',
+  async ({
+    name,
+    bodyPart,
+    variations,
+    defaultVariation,
+  }: {
+    name: string;
+    bodyPart: import('./workout-store').BodyPart;
+    variations: string[];
+    defaultVariation: string | null;
+  }) => {
+    return await workoutStore.createExercise({ name, bodyPart, variations, defaultVariation });
+  }
+);
+
 const addExerciseToWorkoutAsync = createAsyncThunk(
   'training/addExerciseToWorkout',
   async ({
     workoutId,
+    exerciseId,
     name,
+    variation,
     unit,
   }: {
     workoutId: number;
-    name: string;
+    exerciseId?: number;
+    name?: string;
+    variation?: string | null;
     unit: WeightUnit;
   }) => {
-    const exercise = await workoutStore.getOrCreateExercise(name);
+    let exercise: Exercise;
+    if (exerciseId != null) {
+      const found = await workoutStore.getExerciseById(exerciseId);
+      if (!found) throw new Error('Exercise not found');
+      exercise = found;
+    } else {
+      exercise = await workoutStore.getOrCreateExercise(name ?? '', { bodyPart: 'other' });
+    }
+    const resolvedVariation =
+      variation !== undefined
+        ? variation
+        : (exercise.defaultVariation ?? null);
     // Link the exercise to the workout with a placeholder set row so an
     // exercise with no logged sets still shows up in the workout.
     const set = await workoutStore.insertSet({
@@ -120,6 +152,7 @@ const addExerciseToWorkoutAsync = createAsyncThunk(
       reps: null,
       weight: null,
       unit,
+      variation: resolvedVariation,
     });
     return { exercise, set };
   }
@@ -133,14 +166,16 @@ const addSetAsync = createAsyncThunk(
     reps,
     weight,
     unit,
+    variation,
   }: {
     workoutId: number;
     exerciseId: number;
     reps: number | null;
     weight: number | null;
     unit: WeightUnit;
+    variation?: string | null;
   }) => {
-    return await workoutStore.insertSet({ workoutId, exerciseId, reps, weight, unit });
+    return await workoutStore.insertSet({ workoutId, exerciseId, reps, weight, unit, variation: variation ?? null });
   }
 );
 
@@ -159,9 +194,17 @@ const removeSetAsync = createAsyncThunk('training/removeSet', async (id: number)
 
 const removeExerciseFromWorkoutAsync = createAsyncThunk(
   'training/removeExerciseFromWorkout',
-  async ({ workoutId, exerciseId }: { workoutId: number; exerciseId: number }) => {
-    await workoutStore.deleteExerciseFromWorkout(workoutId, exerciseId);
-    return { workoutId, exerciseId };
+  async ({
+    workoutId,
+    exerciseId,
+    variation,
+  }: {
+    workoutId: number;
+    exerciseId: number;
+    variation?: string | null;
+  }) => {
+    await workoutStore.deleteExerciseFromWorkout(workoutId, exerciseId, variation);
+    return { workoutId, exerciseId, variation };
   }
 );
 
@@ -173,6 +216,11 @@ const deleteWorkoutAsync = createAsyncThunk('training/deleteWorkout', async (id:
 const setWeightUnitAsync = createAsyncThunk('training/setWeightUnit', async (unit: WeightUnit) => {
   await saveWeightUnit(unit);
   return unit;
+});
+
+const deleteExerciseAsync = createAsyncThunk('training/deleteExercise', async (id: number) => {
+  await workoutStore.deleteExercise(id);
+  return id;
 });
 
 const setTrainingData = createAsyncThunk(
@@ -243,6 +291,13 @@ const trainingSlice = createSlice({
         }
         state.sets.push(set);
       })
+      .addCase(createExerciseAsync.fulfilled, (state, action) => {
+        const exercise = action.payload;
+        if (!state.exercises.some((e) => e.id === exercise.id)) {
+          state.exercises.push(exercise);
+          state.exercises.sort((a, b) => a.name.localeCompare(b.name));
+        }
+      })
       .addCase(addSetAsync.fulfilled, (state, action) => {
         state.sets.push(action.payload);
       })
@@ -259,15 +314,25 @@ const trainingSlice = createSlice({
         state.sets = state.sets.filter((s) => s.id !== action.payload);
       })
       .addCase(removeExerciseFromWorkoutAsync.fulfilled, (state, action) => {
-        const { workoutId, exerciseId } = action.payload;
+        const { workoutId, exerciseId, variation } = action.payload;
         state.sets = state.sets.filter(
-          (s) => !(s.workoutId === workoutId && s.exerciseId === exerciseId)
+          (s) =>
+            !(
+              s.workoutId === workoutId &&
+              s.exerciseId === exerciseId &&
+              (variation === undefined || (s.variation ?? null) === (variation ?? null))
+            )
         );
       })
       .addCase(deleteWorkoutAsync.fulfilled, (state, action) => {
         const id = action.payload;
         state.workouts = state.workouts.filter((w) => w.id !== id);
         state.sets = state.sets.filter((s) => s.workoutId !== id);
+      })
+      .addCase(deleteExerciseAsync.fulfilled, (state, action) => {
+        const id = action.payload;
+        state.exercises = state.exercises.filter((e) => e.id !== id);
+        state.sets = state.sets.filter((s) => s.exerciseId !== id);
       })
       .addCase(setWeightUnitAsync.fulfilled, (state, action) => {
         state.weightUnit = action.payload;
@@ -292,6 +357,8 @@ export {
   addExerciseToWorkoutAsync,
   addSetAsync,
   clearTrainingAsync,
+  createExerciseAsync,
+  deleteExerciseAsync,
   deleteWorkoutAsync,
   discardWorkoutAsync,
   finishWorkoutAsync,

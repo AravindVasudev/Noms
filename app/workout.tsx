@@ -17,9 +17,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { useWorkoutElapsed } from '@/hooks/use-workout-elapsed';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
+import { ExerciseArt } from '@/components/ui/exercise-art';
 import {
   addExerciseToWorkoutAsync,
   addSetAsync,
+  createExerciseAsync,
+  deleteExerciseAsync,
   discardWorkoutAsync,
   finishWorkoutAsync,
   pauseWorkoutAsync,
@@ -31,7 +34,14 @@ import {
 } from '@/lib/trainingSlice';
 import { KG_TO_LB, WeightUnit } from '@/lib/weight';
 import { formatElapsed, getWorkoutName } from '@/lib/workout-time';
-import type { WorkoutSet } from '@/lib/workout-store';
+import type { BodyPart, Exercise, WorkoutSet } from '@/lib/workout-store';
+import { BODY_PARTS, formatExerciseRef, titleCaseVariation } from '@/lib/workout-store';
+
+const compositeKey = (exerciseId: number, variation: string | null): string =>
+  `${exerciseId}::${variation ?? ''}`;
+
+const formatBodyPart = (b: string | null): string =>
+  b == null || b === '' ? 'Other' : b.charAt(0).toUpperCase() + b.slice(1);
 
 function convertWeight(weight: number, from: WeightUnit, to: WeightUnit): number {
   if (from === to) return weight;
@@ -98,21 +108,32 @@ function SetRow({ set, unit, previous }: { set: WorkoutSet; unit: string; previo
     dispatch(updateSetAsync({ id: set.id, completed: !set.completed }));
   };
 
+  const completedRowBackground =
+    scheme === 'dark' ? 'rgba(48, 209, 88, 0.22)' : 'rgba(52, 199, 89, 0.18)';
+
   return (
-    <View style={styles.setRow}>
+    <View style={[styles.setRow, set.completed && { backgroundColor: completedRowBackground }]}>
       <Pressable
         onPress={confirmDeleteSet}
-        style={styles.setIndexBadge}
+        style={[
+          styles.setIndexBadge,
+          !set.completed && { backgroundColor: colors.inputBackground, borderRadius: 8 },
+        ]}
         accessibilityRole="button"
         accessibilityLabel={`Delete set ${set.setIndex}`}
       >
-        <Text style={[styles.setIndex, { color: colors.secondaryLabel }]}>{set.setIndex}</Text>
+        <Text style={[styles.setIndex, { color: set.completed ? colors.label : colors.secondaryLabel }]}>{set.setIndex}</Text>
       </Pressable>
       <Text style={[styles.previous, { color: colors.secondaryLabel }]} numberOfLines={1}>
         {previous}
       </Text>
       <TextInput
-        style={[styles.setInput, { backgroundColor: colors.inputBackground, color: colors.label }]}
+        style={[
+          styles.setInput,
+          set.completed
+            ? { backgroundColor: 'transparent', color: colors.label }
+            : { backgroundColor: colors.inputBackground, color: colors.label },
+        ]}
         value={weight}
         onChangeText={setWeight}
         onBlur={commitWeight}
@@ -123,7 +144,12 @@ function SetRow({ set, unit, previous }: { set: WorkoutSet; unit: string; previo
         accessibilityLabel={`Set ${set.setIndex} weight in ${unit}`}
       />
       <TextInput
-        style={[styles.setInput, { backgroundColor: colors.inputBackground, color: colors.label }]}
+        style={[
+          styles.setInput,
+          set.completed
+            ? { backgroundColor: 'transparent', color: colors.label }
+            : { backgroundColor: colors.inputBackground, color: colors.label },
+        ]}
         value={reps}
         onChangeText={setReps}
         onBlur={commitReps}
@@ -170,7 +196,17 @@ export default function WorkoutScreen() {
   const weightUnit = useAppSelector((state) => state.training.weightUnit);
   const [query, setQuery] = useState('');
   const [searchVisible, setSearchVisible] = useState(false);
+  const [bodyPartFilter, setBodyPartFilter] = useState<BodyPart | 'any'>('any');
+  const [expandedExerciseId, setExpandedExerciseId] = useState<number | null>(null);
+  const [pendingVariation, setPendingVariation] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [createVisible, setCreateVisible] = useState(false);
+  const [createName, setCreateName] = useState('');
+  const [createBodyPart, setCreateBodyPart] = useState<BodyPart>('other');
+  const [createVariations, setCreateVariations] = useState<string[]>([]);
+  const [createDefault, setCreateDefault] = useState<string | null>(null);
+  const [newVariationInput, setNewVariationInput] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
   const elapsed = useWorkoutElapsed(activeWorkout);
 
   const activeSets = useMemo(
@@ -179,42 +215,47 @@ export default function WorkoutScreen() {
   );
 
   const grouped = useMemo(() => {
-    const map = new Map<number, WorkoutSet[]>();
+    const map = new Map<string, { exerciseId: number; variation: string | null; sets: WorkoutSet[] }>();
     for (const s of activeSets) {
-      const list = map.get(s.exerciseId) ?? [];
-      list.push(s);
-      map.set(s.exerciseId, list);
+      const key = compositeKey(s.exerciseId, s.variation ?? null);
+      const entry = map.get(key);
+      if (entry) {
+        entry.sets.push(s);
+      } else {
+        map.set(key, { exerciseId: s.exerciseId, variation: s.variation ?? null, sets: [s] });
+      }
     }
-    return [...map.entries()].sort((a, b) => a[1][0].id - b[1][0].id);
+    return [...map.values()].sort((a, b) => a.sets[0].id - b.sets[0].id);
   }, [activeSets]);
 
-  // Previous performance per exercise: completed sets from the most recent
-  // completed workout containing that exercise, aligned by set order.
-  const previousSetsByExercise = useMemo(() => {
-    const map = new Map<number, WorkoutSet[]>();
-    const needed = new Set(grouped.map(([id]) => id));
+  // Previous performance per exercise+variation: completed sets from the most
+  // recent completed workout containing that composite, aligned by set order.
+  const previousSetsByRef = useMemo(() => {
+    const map = new Map<string, WorkoutSet[]>();
+    const needed = new Set(grouped.map((g) => compositeKey(g.exerciseId, g.variation)));
     if (needed.size === 0) return map;
     for (const w of completedWorkouts) {
       if (needed.size === 0) break;
-      const byEx = new Map<number, WorkoutSet[]>();
+      const byRef = new Map<string, WorkoutSet[]>();
       for (const s of allSets) {
         if (s.workoutId !== w.id || !s.completed) continue;
-        if (!needed.has(s.exerciseId) || map.has(s.exerciseId)) continue;
-        const list = byEx.get(s.exerciseId) ?? [];
+        const key = compositeKey(s.exerciseId, s.variation ?? null);
+        if (!needed.has(key) || map.has(key)) continue;
+        const list = byRef.get(key) ?? [];
         list.push(s);
-        byEx.set(s.exerciseId, list);
+        byRef.set(key, list);
       }
-      for (const [exId, list] of byEx) {
+      for (const [key, list] of byRef) {
         list.sort((a, b) => a.setIndex - b.setIndex);
-        map.set(exId, list);
-        needed.delete(exId);
+        map.set(key, list);
+        needed.delete(key);
       }
     }
     return map;
   }, [completedWorkouts, allSets, grouped]);
 
-  const previousLabel = (exerciseId: number, position: number): string => {
-    const prev = previousSetsByExercise.get(exerciseId)?.[position];
+  const previousLabel = (exerciseId: number, variation: string | null, position: number): string => {
+    const prev = previousSetsByRef.get(compositeKey(exerciseId, variation))?.[position];
     if (!prev || prev.reps == null) return '–';
     if (prev.weight == null) return `BW × ${prev.reps}`;
     return `${round1(convertWeight(prev.weight, prev.unit, weightUnit))} ${weightUnit} × ${prev.reps}`;
@@ -224,25 +265,131 @@ export default function WorkoutScreen() {
 
   const trimmedQuery = query.trim().toLowerCase();
   const filtered = useMemo(() => {
-    if (trimmedQuery === '') return exercises.slice(0, 8);
-    return exercises
-      .filter((e) => e.name.toLowerCase().includes(trimmedQuery))
-      .slice(0, 8);
-  }, [exercises, trimmedQuery]);
+    const q = trimmedQuery;
+    return exercises.filter((e) => {
+      if (bodyPartFilter !== 'any' && (e.bodyPart ?? 'other') !== bodyPartFilter) return false;
+      if (q === '') return true;
+      return e.name.toLowerCase().includes(q);
+    });
+  }, [exercises, trimmedQuery, bodyPartFilter]);
   const exactMatch = exercises.some((e) => e.name.toLowerCase() === trimmedQuery);
-  const addedExerciseIds = useMemo(() => new Set(grouped.map(([id]) => id)), [grouped]);
+  const addedRefKeys = useMemo(() => new Set(grouped.map((g) => compositeKey(g.exerciseId, g.variation))), [grouped]);
 
-  const handleAddExercise = async (name: string) => {
+  const handleAddExercise = async (exercise: Exercise, variation?: string | null) => {
     if (!activeWorkout || adding) return;
     setAdding(true);
     try {
       await dispatch(
-        addExerciseToWorkoutAsync({ workoutId: activeWorkout.id, name: name.trim(), unit: weightUnit })
+        addExerciseToWorkoutAsync({
+          workoutId: activeWorkout.id,
+          exerciseId: exercise.id,
+          variation: variation !== undefined ? variation : (exercise.defaultVariation ?? null),
+          unit: weightUnit,
+        })
       );
-      setQuery('');
+      // Close the modal on add — one add per open.
+      setExpandedExerciseId(null);
+      setPendingVariation(null);
+      setSearchVisible(false);
     } finally {
       setAdding(false);
     }
+  };
+
+  const openSearch = () => {
+    setQuery('');
+    setBodyPartFilter('any');
+    setExpandedExerciseId(null);
+    setPendingVariation(null);
+    setSearchVisible(true);
+  };
+
+  const firstUnaddedVariation = (e: Exercise): string | null => {
+    for (const v of e.variations) {
+      if (!addedRefKeys.has(compositeKey(e.id, v))) return v;
+    }
+    return null;
+  };
+
+  // Add modal only lists unadded refs: no-variation exercises vanish once
+  // added, and added variations are hidden from the pill row.
+  const visibleExercises = useMemo(
+    () =>
+      filtered.filter((e) => {
+        if (e.variations.length === 0) return !addedRefKeys.has(compositeKey(e.id, null));
+        return e.variations.some((v) => !addedRefKeys.has(compositeKey(e.id, v)));
+      }),
+    [filtered, addedRefKeys]
+  );
+
+  const openCreate = (prefill: string) => {
+    setCreateName(prefill.trim());
+    setCreateBodyPart(bodyPartFilter !== 'any' ? bodyPartFilter : 'other');
+    setCreateVariations([]);
+    setCreateDefault(null);
+    setNewVariationInput('');
+    setCreateError(null);
+    setCreateVisible(true);
+  };
+
+  const handleCreateExercise = async () => {
+    if (!activeWorkout || adding) return;
+    const name = createName.trim();
+    if (!name) {
+      setCreateError('Name is required.');
+      return;
+    }
+    if (exercises.some((e) => e.name.toLowerCase() === name.toLowerCase())) {
+      setCreateError('An exercise with this name already exists.');
+      return;
+    }
+    setAdding(true);
+    setCreateError(null);
+    try {
+      const created = await dispatch(
+        createExerciseAsync({
+          name,
+          bodyPart: createBodyPart,
+          variations: createVariations,
+          defaultVariation: createVariations.length === 0 ? null : (createDefault ?? createVariations[0]),
+        })
+      ).unwrap();
+      await dispatch(
+        addExerciseToWorkoutAsync({
+          workoutId: activeWorkout.id,
+          exerciseId: created.id,
+          variation: created.defaultVariation ?? null,
+          unit: weightUnit,
+        })
+      );
+      setCreateVisible(false);
+      setSearchVisible(false);
+      setQuery('');
+      setExpandedExerciseId(null);
+      setPendingVariation(null);
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : 'Could not create exercise.');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleLongPressExercise = (e: Exercise) => {
+    if (!e.isCustom) return;
+    Alert.alert(`Delete “${e.name}”?`, 'This removes it from the catalog, including its history.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          if (expandedExerciseId === e.id) {
+            setExpandedExerciseId(null);
+            setPendingVariation(null);
+          }
+          await dispatch(deleteExerciseAsync(e.id));
+        },
+      },
+    ]);
   };
 
   const handleFinish = () => {
@@ -396,18 +543,20 @@ export default function WorkoutScreen() {
             {formatElapsed(elapsed)}{paused ? ' · Paused' : ''}
           </Text>
 
-          {grouped.map(([exerciseId, exSets]) => (
+          {grouped.map((group) => (
             <View
-              key={exerciseId}
+              key={compositeKey(group.exerciseId, group.variation)}
               style={[styles.exerciseCard, { backgroundColor: colors.cardBackground }]}
             >
               <View style={styles.exerciseHeader}>
-                <Text style={[styles.exerciseName, { color: colors.systemBlue }]}>
-                  {exerciseById.get(exerciseId)?.name ?? 'Unknown'}
-                </Text>
+                <View style={styles.exerciseTitleWrap}>
+                  <Text style={[styles.exerciseName, { color: colors.systemBlue }]}>
+                    {formatExerciseRef(exerciseById.get(group.exerciseId)?.name ?? 'Unknown', group.variation)}
+                  </Text>
+                </View>
                 <Pressable
                   onPress={() =>
-                    dispatch(removeExerciseFromWorkoutAsync({ workoutId: activeWorkout.id, exerciseId }))
+                    dispatch(removeExerciseFromWorkoutAsync({ workoutId: activeWorkout.id, exerciseId: group.exerciseId, variation: group.variation }))
                   }
                   accessibilityRole="button"
                   accessibilityLabel="Remove exercise from workout"
@@ -462,12 +611,12 @@ export default function WorkoutScreen() {
                   ✓
                 </Text>
               </View>
-              {exSets.map((s, position) => (
+              {group.sets.map((s, position) => (
                 <SetRow
                   key={s.id}
                   set={s}
                   unit={weightUnit}
-                  previous={previousLabel(exerciseId, position)}
+                  previous={previousLabel(group.exerciseId, group.variation, position)}
                 />
               ))}
               <Pressable
@@ -476,10 +625,11 @@ export default function WorkoutScreen() {
                   dispatch(
                     addSetAsync({
                       workoutId: activeWorkout.id,
-                      exerciseId,
+                      exerciseId: group.exerciseId,
                       reps: null,
                       weight: null,
                       unit: weightUnit,
+                      variation: group.variation,
                     })
                   )
                 }
@@ -491,10 +641,7 @@ export default function WorkoutScreen() {
 
           <Pressable
             style={styles.addButton}
-            onPress={() => {
-              setQuery('');
-              setSearchVisible(true);
-            }}
+            onPress={openSearch}
           >
             <Text style={[styles.addButtonText, { color: colors.systemBlue }]}>
               Add Exercises
@@ -537,50 +684,284 @@ export default function WorkoutScreen() {
                 returnKeyType="search"
               />
               <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.chipScroll}
+                contentContainerStyle={styles.chipRow}
+                keyboardShouldPersistTaps="handled"
+              >
+                {(['any', ...BODY_PARTS] as const).map((b) => {
+                  const selected = bodyPartFilter === b;
+                  return (
+                    <Pressable
+                      key={b}
+                      onPress={() => {
+                        setBodyPartFilter(b);
+                        setExpandedExerciseId(null);
+                      }}
+                      style={[
+                        styles.chip,
+                        { backgroundColor: colors.inputBackground },
+                        selected && { backgroundColor: colors.systemBlue },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={`Filter by ${b === 'any' ? 'any body part' : b}`}
+                    >
+                      <Text
+                        style={[
+                          styles.chipText,
+                          { color: colors.secondaryLabel },
+                          selected && { color: colors.onAccent },
+                        ]}
+                      >
+                        {b === 'any' ? 'Any' : formatBodyPart(b)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+              <ScrollView
+                style={styles.resultList}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
               >
                 {trimmedQuery !== '' && !exactMatch && (
                   <Pressable
                     style={[styles.resultRow, { borderBottomColor: colors.separator }]}
-                    onPress={() => handleAddExercise(query)}
+                    onPress={() => openCreate(query)}
                   >
                     <Text style={[styles.resultText, { color: colors.label }]}>
                       Create “{query.trim()}”
                     </Text>
                   </Pressable>
                 )}
-                {filtered.map((e) => {
-                  const added = addedExerciseIds.has(e.id);
+                {visibleExercises.map((e) => {
+                  const defaultVariation = e.defaultVariation ?? null;
+                  const hasVariations = e.variations.length > 0;
+                  const expanded = expandedExerciseId === e.id;
+                  const unaddedVariations = e.variations.filter(
+                    (v) => !addedRefKeys.has(compositeKey(e.id, v))
+                  );
+                  const pending = expanded
+                    ? (pendingVariation ?? firstUnaddedVariation(e) ?? defaultVariation)
+                    : defaultVariation;
                   return (
-                    <Pressable
-                      key={e.id}
-                      style={[styles.resultRow, { borderBottomColor: colors.separator }]}
-                      onPress={() => {
-                        if (added) {
-                          dispatch(
-                            removeExerciseFromWorkoutAsync({ workoutId: activeWorkout.id, exerciseId: e.id })
-                          );
-                        } else {
-                          handleAddExercise(e.name);
-                        }
-                      }}
-                      disabled={adding}
-                    >
-                      <View style={styles.resultMain}>
-                        <Text style={[styles.resultText, { color: colors.label }]}>{e.name}</Text>
-                        {e.muscleGroup && (
+                    <View key={e.id} style={[styles.resultRowWrap, { borderBottomColor: colors.separator }]}>
+                      <Pressable
+                        style={styles.resultRow}
+                        onPress={() => {
+                          if (!hasVariations) {
+                            handleAddExercise(e, null);
+                          } else if (expanded) {
+                            setExpandedExerciseId(null);
+                          } else {
+                            setExpandedExerciseId(e.id);
+                            setPendingVariation(firstUnaddedVariation(e) ?? e.defaultVariation ?? null);
+                          }
+                        }}
+                        onLongPress={() => handleLongPressExercise(e)}
+                        delayLongPress={500}
+                        accessibilityHint={e.isCustom ? 'Long press to delete this custom exercise' : undefined}
+                        disabled={adding}
+                      >
+                        <View style={[styles.thumb, { backgroundColor: colors.inputBackground }]}>
+                          <ExerciseArt
+                            imageKey={e.imageKey}
+                            size={40}
+                            stroke={colors.secondaryLabel}
+                            highlight={colors.systemBlue}
+                          />
+                        </View>
+                        <View style={styles.resultMain}>
+                          <Text style={[styles.resultText, { color: colors.label }]}>{e.name}</Text>
                           <Text style={[styles.resultSub, { color: colors.secondaryLabel }]}>
-                            {e.muscleGroup}
+                            {formatBodyPart(e.bodyPart)}
                           </Text>
+                        </View>
+                        {hasVariations && (
+                          <Text style={[styles.expandHint, { color: colors.secondaryLabel }]}>{expanded ? '▾' : '▸'}</Text>
                         )}
-                      </View>
-                      {added && <Text style={[styles.addedCheck, { color: green }]}>✓</Text>}
-                    </Pressable>
+                      </Pressable>
+                      {expanded && hasVariations && (
+                        <>
+                          <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={styles.pillScroll}
+                            contentContainerStyle={styles.pillRowScroll}
+                            keyboardShouldPersistTaps="handled"
+                          >
+                            {unaddedVariations.map((v) => {
+                              const isPending = (pending ?? null) === v;
+                              return (
+                                <Pressable
+                                  key={v}
+                                  onPress={() => setPendingVariation(v)}
+                                  disabled={adding}
+                                  style={[
+                                    styles.pill,
+                                    { backgroundColor: colors.inputBackground },
+                                    isPending && { borderColor: colors.systemBlue, borderWidth: 1 },
+                                  ]}
+                                  accessibilityRole="radio"
+                                  accessibilityState={{ selected: isPending }}
+                                  accessibilityLabel={`Select ${e.name} ${v}`}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.pillText,
+                                      { color: colors.secondaryLabel },
+                                      isPending && { color: colors.label },
+                                    ]}
+                                  >
+                                    {titleCaseVariation(v)}
+                                  </Text>
+                                </Pressable>
+                              );
+                            })}
+                          </ScrollView>
+                          <Pressable
+                            style={[styles.variationAddButton, { backgroundColor: colors.systemBlue }]}
+                            onPress={() => {
+                              handleAddExercise(e, pending ?? null);
+                              setExpandedExerciseId(null);
+                            }}
+                            disabled={adding}
+                          >
+                            <Text style={[styles.variationAddText, { color: colors.onAccent }]}>
+                              {`Add ${formatExerciseRef(e.name, pending ?? null)}`}
+                            </Text>
+                          </Pressable>
+                        </>
+                      )}
+                    </View>
                   );
                 })}
               </ScrollView>
             </View>
+          </SafeAreaView>
+        </Modal>
+
+        <Modal
+          visible={createVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setCreateVisible(false)}
+        >
+          <SafeAreaView style={[styles.modalSafe, { backgroundColor: colors.systemGroupedBackground }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.separator }]}>
+              <Pressable onPress={() => setCreateVisible(false)}>
+                <Text style={[styles.modalCancel, { color: colors.secondaryLabel }]}>Cancel</Text>
+              </Pressable>
+              <Text style={[styles.modalTitle, { color: colors.label }]}>New Exercise</Text>
+              <Pressable onPress={() => setCreateVisible(false)}>
+                <Text style={[styles.modalDone, { color: colors.systemBlue }]}>Done</Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              style={styles.modalBody}
+              contentContainerStyle={{ gap: 4, paddingBottom: 32 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={[styles.createLabel, { color: colors.label }]}>Name</Text>
+              <TextInput
+                style={[styles.searchInput, { backgroundColor: colors.inputBackground, color: colors.label }]}
+                value={createName}
+                onChangeText={setCreateName}
+                placeholder="Exercise name"
+                placeholderTextColor={colors.secondaryLabel}
+                returnKeyType="done"
+              />
+              <Text style={[styles.createLabel, { color: colors.label }]}>Body part</Text>
+              <View style={styles.pillRow}>
+                {BODY_PARTS.map((b) => (
+                  <Pressable
+                    key={b}
+                    onPress={() => setCreateBodyPart(b)}
+                    style={[
+                      styles.pill,
+                      { backgroundColor: colors.inputBackground },
+                      createBodyPart === b && { backgroundColor: colors.systemBlue },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: createBodyPart === b }}
+                    accessibilityLabel={`Body part ${b}`}
+                  >
+                    <Text
+                      style={[
+                        styles.pillText,
+                        { color: colors.secondaryLabel },
+                        createBodyPart === b && { color: colors.onAccent },
+                      ]}
+                    >
+                      {formatBodyPart(b)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={[styles.createLabel, { color: colors.label }]}>Variations (optional)</Text>
+              {createVariations.map((v) => (
+                <View key={v.toLowerCase()} style={styles.variationRow}>
+                  <Pressable onPress={() => setCreateDefault(v)} accessibilityRole="button">
+                    <Text style={[styles.variationName, { color: createDefault === v || (createDefault == null && createVariations[0] === v) ? colors.systemBlue : colors.label }]}>
+                      {(createDefault === v || (createDefault == null && createVariations[0] === v) ? '● ' : '○ ') + titleCaseVariation(v)}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      const next = createVariations.filter((x) => x !== v);
+                      setCreateVariations(next);
+                      if (createDefault === v) setCreateDefault(next[0] ?? null);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove variation ${v}`}
+                  >
+                    <Text style={[styles.variationRemove, { color: colors.destructive }]}>Remove</Text>
+                  </Pressable>
+                </View>
+              ))}
+              <View style={styles.createInputRow}>
+                <TextInput
+                  style={[styles.searchInput, { flex: 1, backgroundColor: colors.inputBackground, color: colors.label }]}
+                  value={newVariationInput}
+                  onChangeText={setNewVariationInput}
+                  placeholder="Add variation (e.g. dumbbells)"
+                  placeholderTextColor={colors.secondaryLabel}
+                  returnKeyType="done"
+                  onSubmitEditing={() => {
+                    const t = newVariationInput.trim();
+                    if (t && !createVariations.some((x) => x.toLowerCase() === t.toLowerCase())) {
+                      setCreateVariations([...createVariations, t]);
+                      if (createVariations.length === 0) setCreateDefault(t);
+                    }
+                    setNewVariationInput('');
+                  }}
+                />
+                <Pressable
+                  style={[styles.createAddButton, { backgroundColor: colors.inputBackground }]}
+                  onPress={() => {
+                    const t = newVariationInput.trim();
+                    if (t && !createVariations.some((x) => x.toLowerCase() === t.toLowerCase())) {
+                      setCreateVariations([...createVariations, t]);
+                      if (createVariations.length === 0) setCreateDefault(t);
+                    }
+                    setNewVariationInput('');
+                  }}
+                >
+                  <Text style={[styles.createAddText, { color: colors.systemBlue }]}>Add</Text>
+                </Pressable>
+              </View>
+              {createError && <Text style={[styles.createError, { color: colors.destructive }]}>{createError}</Text>}
+              <Pressable
+                style={[styles.createSaveButton, { backgroundColor: green }]}
+                onPress={handleCreateExercise}
+                disabled={adding}
+              >
+                <Text style={[styles.createSaveText, { color: colors.onAccent }]}>Create & Add</Text>
+              </Pressable>
+            </ScrollView>
           </SafeAreaView>
         </Modal>
       </KeyboardAvoidingView>
@@ -622,12 +1003,13 @@ const styles = StyleSheet.create({
   workoutSub: { fontSize: 15, fontVariant: ['tabular-nums'] },
   exerciseCard: { borderRadius: 12, padding: 12, gap: 2 },
   exerciseHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  exerciseName: { fontSize: 17, fontWeight: '700', flex: 1 },
+  exerciseTitleWrap: { flex: 1 },
+  exerciseName: { fontSize: 17, fontWeight: '700' },
   removeExercise: { fontSize: 13, fontWeight: '600' },
   columnHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
   columnText: { fontSize: 11, fontWeight: '600' },
-  setRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 3 },
-  setIndexBadge: { width: 30, alignItems: 'center' },
+  setRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 4, borderRadius: 8 },
+  setIndexBadge: { width: 30, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
   setIndex: { fontSize: 14, fontVariant: ['tabular-nums'] },
   previous: { flex: 1.25, fontSize: 13, fontVariant: ['tabular-nums'] },
   previousHeader: { flex: 1.25 },
@@ -680,12 +1062,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 11,
-    borderBottomWidth: 1,
   },
+  resultRowWrap: {
+    borderBottomWidth: 1,
+    paddingBottom: 4,
+  },
+  thumb: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    overflow: 'hidden',
+  },
+  expandHint: { fontSize: 14, marginLeft: 6 },
+  chipRow: { flexDirection: 'row', gap: 8, paddingVertical: 4, paddingRight: 16, alignItems: 'center' },
+  chipScroll: { flexGrow: 0, flexShrink: 0 },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 4 },
+  chip: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, flexShrink: 0 },
+  chipText: { fontSize: 14, fontWeight: '500' },
+  resultList: { flex: 1 },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  pillScroll: { flexGrow: 0, flexShrink: 0 },
+  pillRowScroll: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingVertical: 8, alignItems: 'center' },
+  variationAddButton: { borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginHorizontal: 14, marginBottom: 8 },
+  variationAddText: { fontSize: 15, fontWeight: '700' },
+  pill: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 },
+  pillText: { fontSize: 14, fontWeight: '500' },
+  createLabel: { fontSize: 15, fontWeight: '600', marginTop: 8 },
+  createError: { fontSize: 14 },
+  variationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 },
+  variationName: { fontSize: 16 },
+  variationRemove: { fontSize: 14, fontWeight: '600' },
+  createInputRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  createAddButton: { borderRadius: 10, paddingVertical: 11, paddingHorizontal: 16 },
+  createAddText: { fontSize: 15, fontWeight: '700' },
+  createSaveButton: { borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 12 },
+  createSaveText: { fontSize: 16, fontWeight: '700' },
   resultMain: { flex: 1 },
   resultText: { fontSize: 16, fontWeight: '500' },
   resultSub: { fontSize: 13 },
-  addedCheck: { fontSize: 16, fontWeight: '700' },
   addButton: {
     backgroundColor: 'rgba(0, 122, 255, 0.12)',
     borderRadius: 12,

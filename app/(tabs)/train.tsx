@@ -12,6 +12,7 @@ import {
 import { KG_TO_LB, WeightUnit } from '@/lib/weight';
 import { formatElapsed, getWorkoutElapsedSeconds, getWorkoutName } from '@/lib/workout-time';
 import type { Workout } from '@/lib/workout-store';
+import { formatExerciseRef } from '@/lib/workout-store';
 
 function convertWeight(weight: number, from: WeightUnit, to: WeightUnit): number {
   if (from === to) return weight;
@@ -51,7 +52,7 @@ export default function Train() {
         return sum + s.reps * convertWeight(s.weight, s.unit, weightUnit);
       }, 0);
       stats.set(w.id, {
-        exerciseCount: new Set(wSets.map((s) => s.exerciseId)).size,
+        exerciseCount: new Set(wSets.map((s) => `${s.exerciseId}::${s.variation ?? ''}`)).size,
         volume: round1(volume),
       });
     }
@@ -104,11 +105,15 @@ export default function Train() {
             workouts.map((w) => {
               const stats = workoutStats.get(w.id);
               const expanded = expandedWorkoutId === w.id;
-              const grouped = new Map<number, NonNullable<ReturnType<typeof loggedSetsByWorkout.get>>>();
+              const grouped = new Map<string, { exerciseId: number; variation: string | null; sets: NonNullable<ReturnType<typeof loggedSetsByWorkout.get>> }>();
               for (const s of loggedSetsByWorkout.get(w.id) ?? []) {
-                const list = grouped.get(s.exerciseId) ?? [];
-                list.push(s);
-                grouped.set(s.exerciseId, list);
+                const key = `${s.exerciseId}::${s.variation ?? ''}`;
+                const entry = grouped.get(key);
+                if (entry) {
+                  entry.sets.push(s);
+                } else {
+                  grouped.set(key, { exerciseId: s.exerciseId, variation: s.variation ?? null, sets: [s] });
+                }
               }
               return (
                 <View key={w.id} style={[styles.card, { backgroundColor: colors.cardBackground }]}>
@@ -134,12 +139,12 @@ export default function Train() {
                   </Pressable>
                   {expanded && (
                     <View style={[styles.detail, { borderTopColor: colors.separator }]}>
-                      {[...grouped.entries()].map(([exerciseId, exSets]) => (
-                        <View key={exerciseId} style={styles.detailGroup}>
+                      {[...grouped.values()].map((g) => (
+                        <View key={`${g.exerciseId}::${g.variation ?? ''}`} style={styles.detailGroup}>
                           <Text style={[styles.detailExercise, { color: colors.label }]}>
-                            {exerciseById.get(exerciseId)?.name ?? 'Unknown'}
+                            {formatExerciseRef(exerciseById.get(g.exerciseId)?.name ?? 'Unknown', g.variation)}
                           </Text>
-                          {exSets.map((s) => (
+                          {g.sets.map((s) => (
                             <Text key={s.id} style={[styles.detailSet, { color: colors.secondaryLabel }]}>
                               {s.weight == null
                                 ? 'Bodyweight'

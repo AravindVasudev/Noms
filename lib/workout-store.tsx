@@ -2,10 +2,48 @@ import * as SQLite from 'expo-sqlite';
 
 import type { WeightUnit } from './weight';
 
+export type BodyPart =
+  | 'core'
+  | 'arms'
+  | 'back'
+  | 'chest'
+  | 'legs'
+  | 'shoulders'
+  | 'other'
+  | 'cardio'
+  | 'full body';
+
+export const BODY_PARTS: BodyPart[] = [
+  'core',
+  'arms',
+  'back',
+  'chest',
+  'legs',
+  'shoulders',
+  'other',
+  'cardio',
+  'full body',
+];
+
+export const DEFAULT_SKELETON_IMAGE = 'default-skeleton';
+export const CUSTOM_SKELETON_IMAGE = 'custom-skeleton';
+
+export const titleCaseVariation = (s: string): string =>
+  s
+    .split(' ')
+    .map((w) => (w.length === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(' ');
+
+export const formatExerciseRef = (name: string, variation: string | null): string =>
+  variation == null ? name : `${name} (${titleCaseVariation(variation)})`;
+
 export type Exercise = {
   id: number;
   name: string;
-  muscleGroup: string | null;
+  bodyPart: BodyPart | null;
+  variations: string[];
+  defaultVariation: string | null;
+  imageKey: string;
   isCustom: boolean;
 };
 
@@ -29,6 +67,7 @@ export type WorkoutSet = {
   weight: number | null;
   unit: WeightUnit;
   completed: boolean;
+  variation: string | null;
 };
 
 type WorkoutRow = {
@@ -40,22 +79,45 @@ type WorkoutRow = {
   paused_at: string | null;
 };
 
-const SEEDED_EXERCISES: { name: string; muscleGroup: string }[] = [
-  { name: 'Bench Press', muscleGroup: 'Chest' },
-  { name: 'Incline Bench Press', muscleGroup: 'Chest' },
-  { name: 'Overhead Press', muscleGroup: 'Shoulders' },
-  { name: 'Lateral Raise', muscleGroup: 'Shoulders' },
-  { name: 'Barbell Row', muscleGroup: 'Back' },
-  { name: 'Lat Pulldown', muscleGroup: 'Back' },
-  { name: 'Pull-Up', muscleGroup: 'Back' },
-  { name: 'Deadlift', muscleGroup: 'Back' },
-  { name: 'Squat', muscleGroup: 'Legs' },
-  { name: 'Leg Press', muscleGroup: 'Legs' },
-  { name: 'Hip Thrust', muscleGroup: 'Legs' },
-  { name: 'Bicep Curl', muscleGroup: 'Arms' },
-  { name: 'Triceps Pushdown', muscleGroup: 'Arms' },
-  { name: 'Dips', muscleGroup: 'Chest' },
+const SEEDED_EXERCISES: { name: string; bodyPart: BodyPart; variations: string[]; imageKey: string }[] = [
+  { name: 'Bench Press', bodyPart: 'chest', variations: ['dumbbells', 'barbell', 'smith machine', 'machine'], imageKey: 'bench-press' },
+  { name: 'Incline Bench Press', bodyPart: 'chest', variations: ['dumbbells', 'barbell', 'smith machine', 'machine'], imageKey: 'incline-bench-press' },
+  { name: 'Overhead Press', bodyPart: 'shoulders', variations: ['dumbbells', 'barbell', 'machine'], imageKey: 'overhead-press' },
+  { name: 'Lateral Raise', bodyPart: 'shoulders', variations: ['dumbbells', 'cable', 'machine'], imageKey: 'lateral-raise' },
+  { name: 'Barbell Row', bodyPart: 'back', variations: ['barbell', 'dumbbells', 'machine'], imageKey: 'barbell-row' },
+  { name: 'Lat Pulldown', bodyPart: 'back', variations: ['machine', 'cable'], imageKey: 'lat-pulldown' },
+  { name: 'Pull-Up', bodyPart: 'back', variations: ['bodyweight', 'weighted'], imageKey: 'pull-up' },
+  { name: 'Deadlift', bodyPart: 'back', variations: ['barbell', 'dumbbells', 'trap bar'], imageKey: 'deadlift' },
+  { name: 'Squat', bodyPart: 'legs', variations: ['barbell', 'dumbbells', 'smith machine', 'machine'], imageKey: 'squat' },
+  { name: 'Leg Press', bodyPart: 'legs', variations: ['machine'], imageKey: 'leg-press' },
+  { name: 'Hip Thrust', bodyPart: 'legs', variations: ['barbell', 'dumbbells', 'machine'], imageKey: 'hip-thrust' },
+  { name: 'Bicep Curl', bodyPart: 'arms', variations: ['dumbbells', 'barbell', 'cable', 'machine'], imageKey: 'bicep-curl' },
+  { name: 'Triceps Pushdown', bodyPart: 'arms', variations: ['cable', 'machine'], imageKey: 'triceps-pushdown' },
+  { name: 'Dips', bodyPart: 'chest', variations: ['bodyweight', 'weighted'], imageKey: 'dips' },
 ];
+
+const isBodyPart = (s: unknown): s is BodyPart =>
+  typeof s === 'string' && (BODY_PARTS as string[]).includes(s);
+
+const parseVariations = (raw: unknown): string[] => {
+  if (typeof raw !== 'string' || raw.trim() === '') return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const out: string[] = [];
+    for (const v of parsed) {
+      if (typeof v !== 'string') continue;
+      const t = v.trim();
+      if (!t) continue;
+      if (out.some((e) => e.toLowerCase() === t.toLowerCase())) continue;
+      out.push(t);
+      if (out.length >= 20) break;
+    }
+    return out;
+  } catch {
+    return [];
+  }
+};
 
 const isValidStatus = (s: string): s is WorkoutStatus =>
   s === 'active' || s === 'paused' || s === 'completed';
@@ -101,9 +163,28 @@ class WorkoutStore {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE COLLATE NOCASE,
         muscle_group TEXT,
-        is_custom INTEGER NOT NULL DEFAULT 0
+        is_custom INTEGER NOT NULL DEFAULT 0,
+        body_part TEXT,
+        variations_json TEXT NOT NULL DEFAULT '[]',
+        default_variation TEXT,
+        image_key TEXT NOT NULL DEFAULT '${DEFAULT_SKELETON_IMAGE}'
       )`
     );
+    // Dev-migration guards: add new columns to pre-existing tables.
+    const exerciseColumns: any[] = await db.getAllAsync('PRAGMA table_info(exercises)');
+    const exNames = new Set(exerciseColumns.map((c) => c.name));
+    if (!exNames.has('body_part')) {
+      await db.execAsync('ALTER TABLE exercises ADD COLUMN body_part TEXT');
+    }
+    if (!exNames.has('variations_json')) {
+      await db.execAsync("ALTER TABLE exercises ADD COLUMN variations_json TEXT NOT NULL DEFAULT '[]'");
+    }
+    if (!exNames.has('default_variation')) {
+      await db.execAsync('ALTER TABLE exercises ADD COLUMN default_variation TEXT');
+    }
+    if (!exNames.has('image_key')) {
+      await db.execAsync(`ALTER TABLE exercises ADD COLUMN image_key TEXT NOT NULL DEFAULT '${DEFAULT_SKELETON_IMAGE}'`);
+    }
     await db.execAsync(
       `CREATE TABLE IF NOT EXISTS workouts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -150,49 +231,118 @@ class WorkoutStore {
       // Pre-flag rows predate the checkmark: anything with reps was a logged set.
       await db.runAsync('UPDATE workout_sets SET completed = 1 WHERE reps IS NOT NULL');
     }
+    if (!setColumns.some((c) => c.name === 'variation')) {
+      await db.execAsync('ALTER TABLE workout_sets ADD COLUMN variation TEXT');
+    }
     // Seed built-in exercises. INSERT OR IGNORE makes re-init idempotent
-    // and COLLATE NOCASE dedups user-created case variants.
+    // and COLLATE NOCASE dedups user-created case variants; UPDATE keeps
+    // seed metadata (body part / variations) fresh on dev rewrites.
     for (const ex of SEEDED_EXERCISES) {
+      const variations = ex.variations.slice(0, 20);
       await db.runAsync(
-        'INSERT OR IGNORE INTO exercises (name, muscle_group, is_custom) VALUES (?, ?, 0)',
-        [ex.name, ex.muscleGroup]
+        'INSERT OR IGNORE INTO exercises (name, muscle_group, is_custom, body_part, variations_json, default_variation, image_key) VALUES (?, ?, 0, ?, ?, ?, ?)',
+        [ex.name, ex.bodyPart, ex.bodyPart, JSON.stringify(variations), variations[0] ?? null, ex.imageKey]
+      );
+      await db.runAsync(
+        'UPDATE exercises SET body_part = ?, variations_json = ?, default_variation = ?, image_key = ? WHERE name = ? COLLATE NOCASE AND is_custom = 0',
+        [ex.bodyPart, JSON.stringify(variations), variations[0] ?? null, ex.imageKey, ex.name]
       );
     }
+    // Ensure every row has an image key for the bundled placeholders.
+    await db.runAsync(
+      `UPDATE exercises SET image_key = CASE WHEN is_custom = 1 THEN '${CUSTOM_SKELETON_IMAGE}' ELSE '${DEFAULT_SKELETON_IMAGE}' END WHERE image_key IS NULL OR image_key = ''`
+    );
     // Sweep orphan sets in case foreign_keys was off when they were written.
     await db.runAsync(
       'DELETE FROM workout_sets WHERE workout_id NOT IN (SELECT id FROM workouts) OR exercise_id NOT IN (SELECT id FROM exercises)'
     );
   }
 
+  private toExercise(r: any): Exercise {
+    const variations = parseVariations(r.variations_json);
+    const dv = r.default_variation == null ? null : String(r.default_variation);
+    const bodyPart = isBodyPart(r.body_part) ? (r.body_part as BodyPart) : null;
+    return {
+      id: r.id,
+      name: String(r.name),
+      bodyPart,
+      variations,
+      defaultVariation: dv && variations.some((v) => v.toLowerCase() === dv.toLowerCase()) ? dv : (variations[0] ?? null),
+      imageKey: r.image_key == null || String(r.image_key) === '' ? (Number(r.is_custom) === 1 ? CUSTOM_SKELETON_IMAGE : DEFAULT_SKELETON_IMAGE) : String(r.image_key),
+      isCustom: Number(r.is_custom) === 1,
+    };
+  }
+
   async getAllExercises(): Promise<Exercise[]> {
     const db = await this.getDb();
     const rows: any[] = await db.getAllAsync('SELECT * FROM exercises ORDER BY name COLLATE NOCASE ASC');
-    return rows.map((r) => ({
-      id: r.id,
-      name: String(r.name),
-      muscleGroup: r.muscle_group == null ? null : String(r.muscle_group),
-      isCustom: Number(r.is_custom) === 1,
-    }));
+    return rows.map((r) => this.toExercise(r));
+  }
+
+  async getExerciseById(id: number): Promise<Exercise | null> {
+    const db = await this.getDb();
+    const row: any = await db.getFirstAsync('SELECT * FROM exercises WHERE id = ?', [id]);
+    if (!row) return null;
+    return this.toExercise(row);
   }
 
   /** Case-insensitive get-or-create. Double-tap safe via INSERT OR IGNORE. */
-  async getOrCreateExercise(name: string): Promise<Exercise> {
+  async getOrCreateExercise(
+    name: string,
+    opts?: { bodyPart?: BodyPart | null; imageKey?: string }
+  ): Promise<Exercise> {
     const trimmed = name.trim();
+    if (!trimmed) throw new Error('Exercise name is required');
     const db = await this.getDb();
     await db.runAsync(
-      'INSERT OR IGNORE INTO exercises (name, muscle_group, is_custom) VALUES (?, NULL, 1)',
-      [trimmed]
+      `INSERT OR IGNORE INTO exercises (name, muscle_group, is_custom, body_part, variations_json, default_variation, image_key) VALUES (?, NULL, 1, ?, '[]', NULL, ?)`,
+      [trimmed, opts?.bodyPart ?? 'other', opts?.imageKey ?? CUSTOM_SKELETON_IMAGE]
     );
     const row: any = await db.getFirstAsync(
       'SELECT * FROM exercises WHERE name = ? COLLATE NOCASE',
       [trimmed]
     );
-    return {
-      id: row.id,
-      name: String(row.name),
-      muscleGroup: row.muscle_group == null ? null : String(row.muscle_group),
-      isCustom: Number(row.is_custom) === 1,
-    };
+    return this.toExercise(row);
+  }
+
+  /** Validated create for custom exercises from the Create modal. Throws on duplicate. */
+  async createExercise(args: {
+    name: string;
+    bodyPart: BodyPart;
+    variations: string[];
+    defaultVariation: string | null;
+  }): Promise<Exercise> {
+    const name = args.name.trim();
+    if (!name) throw new Error('Exercise name is required');
+    if (!isBodyPart(args.bodyPart)) throw new Error('Body part is required');
+    const variations: string[] = [];
+    for (const v of args.variations) {
+      const t = String(v ?? '').trim();
+      if (!t) continue;
+      if (variations.some((e) => e.toLowerCase() === t.toLowerCase())) continue;
+      variations.push(t);
+      if (variations.length >= 20) break;
+    }
+    let def = args.defaultVariation?.trim() ? String(args.defaultVariation).trim() : null;
+    if (variations.length === 0) {
+      def = null;
+    } else if (!def || !variations.some((v) => v.toLowerCase() === def!.toLowerCase())) {
+      def = variations[0];
+    }
+    const db = await this.getDb();
+    const existing: any = await db.getFirstAsync(
+      'SELECT id FROM exercises WHERE name = ? COLLATE NOCASE',
+      [name]
+    );
+    if (existing) throw new Error('An exercise with this name already exists');
+    const res = await db.runAsync(
+      'INSERT INTO exercises (name, muscle_group, is_custom, body_part, variations_json, default_variation, image_key) VALUES (?, ?, 1, ?, ?, ?, ?)',
+      [name, args.bodyPart, args.bodyPart, JSON.stringify(variations), def, CUSTOM_SKELETON_IMAGE]
+    );
+    const row: any = await db.getFirstAsync('SELECT * FROM exercises WHERE id = ?', [
+      res.lastInsertRowId,
+    ]);
+    return this.toExercise(row);
   }
 
   async getActiveWorkout(): Promise<Workout | null> {
@@ -233,6 +383,7 @@ class WorkoutStore {
       weight: r.weight == null ? null : Number(r.weight),
       unit: toUnit(r.unit),
       completed: Number(r.completed) === 1,
+      variation: r.variation == null ? null : String(r.variation),
     }));
   }
 
@@ -248,6 +399,7 @@ class WorkoutStore {
       weight: r.weight == null ? null : Number(r.weight),
       unit: toUnit(r.unit),
       completed: Number(r.completed) === 1,
+      variation: r.variation == null ? null : String(r.variation),
     }));
   }
 
@@ -308,6 +460,7 @@ class WorkoutStore {
     reps: number | null;
     weight: number | null;
     unit: WeightUnit;
+    variation?: string | null;
   }): Promise<WorkoutSet> {
     const db = await this.getDb();
     const row: any = await db.getFirstAsync(
@@ -315,9 +468,10 @@ class WorkoutStore {
       [args.workoutId, args.exerciseId]
     );
     const nextIndex = Number(row?.maxIdx ?? 0) + 1;
+    const variation = args.variation ?? null;
     const res = await db.runAsync(
-      'INSERT INTO workout_sets (workout_id, exercise_id, set_index, reps, weight, unit, completed) VALUES (?, ?, ?, ?, ?, ?, 0)',
-      [args.workoutId, args.exerciseId, nextIndex, args.reps, args.weight, args.unit]
+      'INSERT INTO workout_sets (workout_id, exercise_id, set_index, reps, weight, unit, completed, variation) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
+      [args.workoutId, args.exerciseId, nextIndex, args.reps, args.weight, args.unit, variation]
     );
     return {
       id: res.lastInsertRowId,
@@ -328,6 +482,7 @@ class WorkoutStore {
       weight: args.weight,
       unit: args.unit,
       completed: false,
+      variation,
     };
   }
 
@@ -360,12 +515,24 @@ class WorkoutStore {
     await db.runAsync('DELETE FROM workout_sets WHERE id = ?', [id]);
   }
 
-  async deleteExerciseFromWorkout(workoutId: number, exerciseId: number): Promise<void> {
+  async deleteExerciseFromWorkout(workoutId: number, exerciseId: number, variation?: string | null): Promise<void> {    const db = await this.getDb();
+    if (variation === undefined) {
+      await db.runAsync('DELETE FROM workout_sets WHERE workout_id = ? AND exercise_id = ?', [
+        workoutId,
+        exerciseId,
+      ]);
+    } else {
+      await db.runAsync(
+        "DELETE FROM workout_sets WHERE workout_id = ? AND exercise_id = ? AND COALESCE(variation, '') = COALESCE(?, '')",
+        [workoutId, exerciseId, variation]
+      );
+    }
+  }
+
+  async deleteExercise(exerciseId: number): Promise<void> {
     const db = await this.getDb();
-    await db.runAsync('DELETE FROM workout_sets WHERE workout_id = ? AND exercise_id = ?', [
-      workoutId,
-      exerciseId,
-    ]);
+    await db.runAsync('DELETE FROM workout_sets WHERE exercise_id = ?', [exerciseId]);
+    await db.runAsync('DELETE FROM exercises WHERE id = ?', [exerciseId]);
   }
 
   async replaceAll(data: { exercises: Exercise[]; workouts: Workout[]; sets: WorkoutSet[] }): Promise<{
@@ -378,21 +545,47 @@ class WorkoutStore {
     const exerciseIdMap = new Map<number, number>();
     const exercises: Exercise[] = [];
     for (const ex of data.exercises) {
-      const name = String(ex.name ?? '').trim();
+      const name = String((ex as any).name ?? '').trim();
       if (!name) continue;
+      // Backward compat: old exports carry muscleGroup instead of bodyPart.
+      const rawBody = (ex as any).bodyPart ?? (ex as any).muscleGroup ?? null;
+      const bodyPart: BodyPart | null =
+        typeof rawBody === 'string' && isBodyPart(rawBody.toLowerCase())
+          ? (rawBody.toLowerCase() as BodyPart)
+          : typeof rawBody === 'string' && isBodyPart(rawBody)
+            ? (rawBody as BodyPart)
+            : 'other';
+      const rawVars = Array.isArray((ex as any).variations) ? (ex as any).variations : [];
+      const variations: string[] = [];
+      for (const v of rawVars) {
+        if (typeof v !== 'string' || !v.trim()) continue;
+        if (variations.some((e) => e.toLowerCase() === v.trim().toLowerCase())) continue;
+        variations.push(v.trim());
+      }
+      const rawDef = (ex as any).defaultVariation ?? null;
+      const def = rawDef && variations.some((v) => v.toLowerCase() === String(rawDef).toLowerCase())
+        ? String(rawDef)
+        : (variations[0] ?? null);
+      const imageKey =
+        typeof (ex as any).imageKey === 'string' && (ex as any).imageKey
+          ? String((ex as any).imageKey)
+          : (ex as any).isCustom
+            ? CUSTOM_SKELETON_IMAGE
+            : DEFAULT_SKELETON_IMAGE;
       // INSERT OR IGNORE leaves lastInsertRowId stale when ignored, so
       // always re-read the row instead of trusting it.
       await db.runAsync(
-        'INSERT OR IGNORE INTO exercises (name, muscle_group, is_custom) VALUES (?, ?, ?)',
-        [name, ex.muscleGroup ?? null, ex.isCustom ? 1 : 0]
+        'INSERT OR IGNORE INTO exercises (name, muscle_group, is_custom, body_part, variations_json, default_variation, image_key) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [name, typeof rawBody === 'string' ? rawBody : null, (ex as any).isCustom ? 1 : 0, bodyPart, JSON.stringify(variations), def, imageKey]
       );
       const existing: any = await db.getFirstAsync(
         'SELECT id FROM exercises WHERE name = ? COLLATE NOCASE',
         [name]
       );
       if (existing?.id == null) continue;
-      if (ex.id != null) exerciseIdMap.set(ex.id, existing.id);
-      exercises.push({ id: existing.id, name, muscleGroup: ex.muscleGroup ?? null, isCustom: !!ex.isCustom });
+      if ((ex as any).id != null) exerciseIdMap.set((ex as any).id, existing.id);
+      const full: any = await db.getFirstAsync('SELECT * FROM exercises WHERE id = ?', [existing.id]);
+      exercises.push(this.toExercise(full));
     }
     const workoutIdMap = new Map<number, number>();
     const workouts: Workout[] = [];
@@ -423,8 +616,8 @@ class WorkoutStore {
       const exerciseId = exerciseIdMap.get(s.exerciseId);
       if (workoutId == null || exerciseId == null) continue;
       const res = await db.runAsync(
-        'INSERT INTO workout_sets (workout_id, exercise_id, set_index, reps, weight, unit, completed) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [workoutId, exerciseId, Number(s.setIndex) || 1, s.reps, s.weight, toUnit(s.unit), s.completed ? 1 : 0]
+        'INSERT INTO workout_sets (workout_id, exercise_id, set_index, reps, weight, unit, completed, variation) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [workoutId, exerciseId, Number(s.setIndex) || 1, s.reps, s.weight, toUnit(s.unit), s.completed ? 1 : 0, (s as any).variation ?? null]
       );
       sets.push({
         id: res.lastInsertRowId,
@@ -435,6 +628,7 @@ class WorkoutStore {
         weight: s.weight ?? null,
         unit: toUnit(s.unit),
         completed: !!s.completed,
+        variation: (s as any).variation ?? null,
       });
     }
     // Drop sets whose FK targets didn't survive (keeps import total-replace safe).

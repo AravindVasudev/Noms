@@ -12,6 +12,7 @@ import AverageCard from '../../components/ui/average-card';
 import LineChartCard from '../../components/ui/line-chart-card';
 import { Nutrition } from '../../lib/diarySlice';
 import { InsightMetricId } from '../../lib/insightsSettingsSlice';
+import { formatExerciseRef } from '../../lib/workout-store';
 import { useAppSelector } from '../../lib/store';
 
 type NutritionMetricId = Exclude<InsightMetricId, 'weight' | 'trainingVolume' | 'trainingTopSet'>;
@@ -44,7 +45,7 @@ const AVERAGE_WINDOWS = [
 export default function Insights() {
   const router = useRouter();
   const [duration, setDuration] = useState<number>(7);
-  const [trainingExerciseId, setTrainingExerciseId] = useState<number | null>(null);
+  const [trainingRefKey, setTrainingRefKey] = useState<string | null>(null);
   const diary = useAppSelector(state => state.diary.diary);
   const goalsStrings = useAppSelector(state => state.goals);
   const insightsSettings = useAppSelector(state => state.insightsSettings);
@@ -198,31 +199,40 @@ export default function Insights() {
     return training.sets.filter((s) => ids.has(s.workoutId) && s.completed && (s.reps != null || s.weight != null));
   }, [training.workouts, training.sets]);
 
-  const chartableTrainingExercises = useMemo(() => {
-    const seen = new Map<number, number>();
+  const refKeyOf = (exerciseId: number, variation: string | null): string =>
+    `${exerciseId}::${variation ?? ''}`;
+
+  const refLabelOf = (exerciseId: number, variation: string | null): string =>
+    formatExerciseRef(trainingExerciseById.get(exerciseId)?.name ?? 'Unknown', variation);
+
+  const chartableTrainingRefs = useMemo(() => {
+    const seen = new Map<string, { exerciseId: number; variation: string | null; last: number }>();
     const startedById = new Map(training.workouts.map((w) => [w.id, w.startedAt.getTime()]));
     for (const s of completedTrainingSets) {
       const t = startedById.get(s.workoutId) ?? 0;
-      const prev = seen.get(s.exerciseId);
-      if (prev === undefined || t > prev) seen.set(s.exerciseId, t);
+      const key = refKeyOf(s.exerciseId, s.variation ?? null);
+      const prev = seen.get(key);
+      if (prev === undefined || t > prev.last) seen.set(key, { exerciseId: s.exerciseId, variation: s.variation ?? null, last: t });
     }
     return [...seen.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .map(([id]) => trainingExerciseById.get(id))
-      .filter((e) => e !== undefined);
-  }, [completedTrainingSets, training.workouts, trainingExerciseById]);
+      .sort((a, b) => b[1].last - a[1].last)
+      .map(([key, v]) => ({ key, ...v }));
+  }, [completedTrainingSets, training.workouts]);
 
-  const selectedTrainingExerciseId = trainingExerciseId ?? chartableTrainingExercises[0]?.id ?? null;
+  const selectedTrainingRef = trainingRefKey != null
+    ? (chartableTrainingRefs.find((r) => r.key === trainingRefKey) ?? chartableTrainingRefs[0] ?? null)
+    : (chartableTrainingRefs[0] ?? null);
 
   const trainingSeries = useMemo(() => {
     const convert = (weight: number, from: WeightUnit): number =>
       from === training.weightUnit ? weight : from === 'kg' ? weight * KG_TO_LB : weight / KG_TO_LB;
     const volume = new Map<string, number>();
     const maxWeight = new Map<string, number>();
-    if (selectedTrainingExerciseId != null) {
+    if (selectedTrainingRef != null) {
       const startedById = new Map(training.workouts.map((w) => [w.id, w.startedAt]));
       for (const s of completedTrainingSets) {
-        if (s.exerciseId !== selectedTrainingExerciseId) continue;
+        if (s.exerciseId !== selectedTrainingRef.exerciseId) continue;
+        if ((s.variation ?? null) !== (selectedTrainingRef.variation ?? null)) continue;
         const started = startedById.get(s.workoutId);
         if (!started) continue;
         const key = formatDateKey(started);
@@ -238,12 +248,12 @@ export default function Insights() {
       volume: dayKeys.map((k) => round1(volume.get(k) ?? 0)),
       maxWeight: dayKeys.map((k) => round1(maxWeight.get(k) ?? 0)),
     };
-  }, [completedTrainingSets, training.workouts, selectedTrainingExerciseId, dayKeys, training.weightUnit]);
+  }, [completedTrainingSets, training.workouts, selectedTrainingRef, dayKeys, training.weightUnit]);
 
   const showTrainingVolume = insightsSettings.visible.trainingVolume;
   const showTrainingTopSet = insightsSettings.visible.trainingTopSet;
   const showTrainingBlock =
-    (showTrainingVolume || showTrainingTopSet) && chartableTrainingExercises.length > 0;
+    (showTrainingVolume || showTrainingTopSet) && chartableTrainingRefs.length > 0;
   const trainingBlockIndex = orderedIds.findIndex(
     (id) => (id === 'trainingVolume' || id === 'trainingTopSet') && insightsSettings.visible[id]
   );
@@ -253,21 +263,21 @@ export default function Insights() {
       <View>
         <Text style={[styles.weightTitle, { color: colors.label }]}>Training</Text>
         <Text style={[styles.weightValue, { color: colors.label }]}>
-          {trainingExerciseById.get(selectedTrainingExerciseId!)?.name ?? ''}
+          {selectedTrainingRef ? refLabelOf(selectedTrainingRef.exerciseId, selectedTrainingRef.variation) : ''}
         </Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.trainingChips}>
-          {chartableTrainingExercises.map((e) => (
+          {chartableTrainingRefs.map((r) => (
             <Pressable
-              key={e!.id}
-              onPress={() => setTrainingExerciseId(e!.id)}
-              style={[styles.trainingChip, { backgroundColor: colors.inputBackground }, e!.id === selectedTrainingExerciseId && { backgroundColor: colors.systemBlue }]}
+              key={r.key}
+              onPress={() => setTrainingRefKey(r.key)}
+              style={[styles.trainingChip, { backgroundColor: colors.inputBackground }, r.key === selectedTrainingRef?.key && { backgroundColor: colors.systemBlue }]}
             >
               <Text
-                style={[styles.trainingChipText, { color: colors.secondaryLabel }, e!.id === selectedTrainingExerciseId && { color: colors.onAccent }]}
+                style={[styles.trainingChipText, { color: colors.secondaryLabel }, r.key === selectedTrainingRef?.key && { color: colors.onAccent }]}
               >
-                {e!.name}
+                {refLabelOf(r.exerciseId, r.variation)}
               </Text>
             </Pressable>
           ))}
