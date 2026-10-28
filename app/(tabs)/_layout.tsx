@@ -7,8 +7,8 @@ export default function TabLayout() {
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
-        <Label>Food</Label>
-        <Icon sf="book.fill" androidSrc={<VectorIcon family={MaterialIcons} name="book" />} />
+        <Label>Eat</Label>
+        <Icon sf="fork.knife" androidSrc={<VectorIcon family={MaterialIcons} name="restaurant" />} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="train">
         <Icon sf="dumbbell.fill" androidSrc={<VectorIcon family={MaterialIcons} name="fitness-center" />} />
