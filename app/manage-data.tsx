@@ -11,6 +11,7 @@ import { clearAllAsync as clearDiary, setDiary } from '../lib/diarySlice';
 import { clearAllAsync as clearGoals, setGoalsAsync } from '../lib/goalsSlice';
 import { clearAllAsync as clearInsightsSettings, setInsightsSettings } from '../lib/insightsSettingsSlice';
 import { clearAllAsync as clearProfile, setProfile } from '../lib/profileSlice';
+import { clearTrainingAsync, setTrainingData } from '../lib/trainingSlice';
 import { useAppDispatch, useAppSelector } from '../lib/store';
 
 export default function ManageData() {
@@ -21,6 +22,7 @@ export default function ManageData() {
   const catalog = useAppSelector((state) => state.catalog);
   const diary = useAppSelector((state) => state.diary);
   const insightsSettings = useAppSelector((state) => state.insightsSettings);
+  const training = useAppSelector((state) => state.training);
 
   const handleExportData = () => {
     Alert.alert(
@@ -39,6 +41,11 @@ export default function ManageData() {
                 catalog,
                 diary,
                 insightsSettings,
+                training: {
+                  exercises: training.exercises,
+                  workouts: training.workouts,
+                  sets: training.sets,
+                },
                 exportDate: new Date().toISOString(),
               };
 
@@ -110,6 +117,15 @@ export default function ManageData() {
               if ('insightsSettings' in importedData) {
                 await dispatch(setInsightsSettings(importedData.insightsSettings));
               }
+              if ('training' in importedData && importedData.training) {
+                await dispatch(
+                  setTrainingData({
+                    exercises: importedData.training.exercises ?? [],
+                    workouts: importedData.training.workouts ?? [],
+                    sets: importedData.training.sets ?? [],
+                  })
+                );
+              }
 
               Alert.alert('Success', 'Data imported successfully!');
             },
@@ -138,6 +154,7 @@ export default function ManageData() {
             await dispatch(clearGoals());
             await dispatch(clearProfile());
             await dispatch(clearInsightsSettings());
+            await dispatch(clearTrainingAsync());
 
             Alert.alert('Data Cleared', 'All app data has been cleared.');
             router.replace('/signup');

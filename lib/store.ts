@@ -5,6 +5,7 @@ import diaryReducer from './diarySlice';
 import goalsReducer from './goalsSlice';
 import insightsSettingsReducer from './insightsSettingsSlice';
 import profileReducer from './profileSlice';
+import trainingReducer from './trainingSlice';
 
 const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ const store = configureStore({
     profile: profileReducer,
     catalog: catalogReducer,
     insightsSettings: insightsSettingsReducer,
+    training: trainingReducer,
   },
 });
 

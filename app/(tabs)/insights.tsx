@@ -1,6 +1,7 @@
 import { formatDateKey, getLastNDaysKeys, keyToWeekdayLabel } from '@/lib/date';
 import { useBodyMass } from '@/hooks/use-body-mass';
 import { convertWeightFromKg, formatWeight, roundWeight } from '@/lib/weight';
+import { KG_TO_LB, WeightUnit } from '@/lib/weight';
 import { useRouter } from 'expo-router';
 import React, { Fragment, useMemo, useState } from 'react';
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -12,8 +13,10 @@ import { Nutrition } from '../../lib/diarySlice';
 import { InsightMetricId } from '../../lib/insightsSettingsSlice';
 import { useAppSelector } from '../../lib/store';
 
+type NutritionMetricId = Exclude<InsightMetricId, 'weight' | 'trainingVolume' | 'trainingTopSet'>;
+
 type MetricConfig = {
-  id: Exclude<InsightMetricId, 'weight'>;
+  id: NutritionMetricId;
   field: keyof Nutrition;
   title: string;
   yAxisSuffix: string;
@@ -22,7 +25,7 @@ type MetricConfig = {
   overIsGood: boolean;
 };
 
-const METRIC_CONFIGS: Record<Exclude<InsightMetricId, 'weight'>, MetricConfig> = {
+const METRIC_CONFIGS: Record<NutritionMetricId, MetricConfig> = {
   calories: { id: 'calories', field: 'calories', title: 'Calories', yAxisSuffix: ' kcal', unit: 'kcal', goalKey: 'calories', overIsGood: false },
   protein: { id: 'protein', field: 'protein', title: 'Protein', yAxisSuffix: ' g', unit: 'g', goalKey: 'protein', overIsGood: true },
   fiber: { id: 'fiber', field: 'fiber', title: 'Fiber', yAxisSuffix: ' g', unit: 'g', goalKey: 'fiber', overIsGood: true },
@@ -40,6 +43,7 @@ const AVERAGE_WINDOWS = [
 export default function Insights() {
   const router = useRouter();
   const [duration, setDuration] = useState<number>(7);
+  const [trainingExerciseId, setTrainingExerciseId] = useState<number | null>(null);
   const diary = useAppSelector(state => state.diary.diary);
   const goalsStrings = useAppSelector(state => state.goals);
   const insightsSettings = useAppSelector(state => state.insightsSettings);
@@ -55,7 +59,7 @@ export default function Insights() {
 
   const visibleMetrics = useMemo(
     () => insightsSettings.order
-      .filter((id): id is Exclude<InsightMetricId, 'weight'> => id !== 'weight' && insightsSettings.visible[id])
+      .filter((id): id is NutritionMetricId => id !== 'weight' && id !== 'trainingVolume' && id !== 'trainingTopSet' && insightsSettings.visible[id])
       .map((id) => METRIC_CONFIGS[id]),
     [insightsSettings],
   );
@@ -129,7 +133,7 @@ export default function Insights() {
 
     const round = (n: number) => Math.round(n * 100) / 100;
 
-    const result: Record<Exclude<InsightMetricId, 'weight'>, number[]> = {
+    const result: Record<NutritionMetricId, number[]> = {
       calories: [],
       protein: [],
       fiber: [],
@@ -150,7 +154,7 @@ export default function Insights() {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
 
-    const result: Record<Exclude<InsightMetricId, 'weight'>, (number | null)[]> = {
+    const result: Record<NutritionMetricId, (number | null)[]> = {
       calories: [],
       protein: [],
       fiber: [],
@@ -181,6 +185,117 @@ export default function Insights() {
 
   const screenWidth = Dimensions.get('window').width - 32;
 
+  // --- Training charts (completed workouts only; active workout excluded) ---
+  const training = useAppSelector((state) => state.training);
+  const trainingExerciseById = useMemo(
+    () => new Map(training.exercises.map((e) => [e.id, e])),
+    [training.exercises]
+  );
+  const completedTrainingSets = useMemo(() => {
+    const ids = new Set(training.workouts.map((w) => w.id));
+    return training.sets.filter((s) => ids.has(s.workoutId) && s.completed && (s.reps != null || s.weight != null));
+  }, [training.workouts, training.sets]);
+
+  const chartableTrainingExercises = useMemo(() => {
+    const seen = new Map<number, number>();
+    const startedById = new Map(training.workouts.map((w) => [w.id, w.startedAt.getTime()]));
+    for (const s of completedTrainingSets) {
+      const t = startedById.get(s.workoutId) ?? 0;
+      const prev = seen.get(s.exerciseId);
+      if (prev === undefined || t > prev) seen.set(s.exerciseId, t);
+    }
+    return [...seen.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => trainingExerciseById.get(id))
+      .filter((e) => e !== undefined);
+  }, [completedTrainingSets, training.workouts, trainingExerciseById]);
+
+  const selectedTrainingExerciseId = trainingExerciseId ?? chartableTrainingExercises[0]?.id ?? null;
+
+  const trainingSeries = useMemo(() => {
+    const convert = (weight: number, from: WeightUnit): number =>
+      from === training.weightUnit ? weight : from === 'kg' ? weight * KG_TO_LB : weight / KG_TO_LB;
+    const volume = new Map<string, number>();
+    const maxWeight = new Map<string, number>();
+    if (selectedTrainingExerciseId != null) {
+      const startedById = new Map(training.workouts.map((w) => [w.id, w.startedAt]));
+      for (const s of completedTrainingSets) {
+        if (s.exerciseId !== selectedTrainingExerciseId) continue;
+        const started = startedById.get(s.workoutId);
+        if (!started) continue;
+        const key = formatDateKey(started);
+        if (s.reps != null && s.weight != null) {
+          const wConv = convert(s.weight, s.unit);
+          volume.set(key, (volume.get(key) ?? 0) + s.reps * wConv);
+          maxWeight.set(key, Math.max(maxWeight.get(key) ?? 0, wConv));
+        }
+      }
+    }
+    const round1 = (n: number) => Math.round(n * 10) / 10;
+    return {
+      volume: dayKeys.map((k) => round1(volume.get(k) ?? 0)),
+      maxWeight: dayKeys.map((k) => round1(maxWeight.get(k) ?? 0)),
+    };
+  }, [completedTrainingSets, training.workouts, selectedTrainingExerciseId, dayKeys, training.weightUnit]);
+
+  const showTrainingVolume = insightsSettings.visible.trainingVolume;
+  const showTrainingTopSet = insightsSettings.visible.trainingTopSet;
+  const showTrainingBlock =
+    (showTrainingVolume || showTrainingTopSet) && chartableTrainingExercises.length > 0;
+  const trainingBlockIndex = orderedIds.findIndex(
+    (id) => (id === 'trainingVolume' || id === 'trainingTopSet') && insightsSettings.visible[id]
+  );
+
+  const trainingBlock = !showTrainingBlock ? null : (
+    <Fragment>
+      <View>
+        <Text style={styles.weightTitle}>Training</Text>
+        <Text style={styles.weightValue}>
+          {trainingExerciseById.get(selectedTrainingExerciseId!)?.name ?? ''}
+        </Text>
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.trainingChips}>
+          {chartableTrainingExercises.map((e) => (
+            <Pressable
+              key={e!.id}
+              onPress={() => setTrainingExerciseId(e!.id)}
+              style={[styles.trainingChip, e!.id === selectedTrainingExerciseId && styles.trainingChipSelected]}
+            >
+              <Text
+                style={[styles.trainingChipText, e!.id === selectedTrainingExerciseId && styles.trainingChipTextSelected]}
+              >
+                {e!.name}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
+      {showTrainingVolume && (
+        <LineChartCard
+          title={`Last ${selectedDurationLabel} — Volume`}
+          labels={labels}
+          dataPoints={trainingSeries.volume}
+          yAxisSuffix={` ${training.weightUnit}`}
+          width={screenWidth}
+          scrollable={duration > 7}
+          decimalPlaces={1}
+        />
+      )}
+      {showTrainingTopSet && (
+        <LineChartCard
+          title={`Last ${selectedDurationLabel} — Top Set`}
+          labels={labels}
+          dataPoints={trainingSeries.maxWeight}
+          yAxisSuffix={` ${training.weightUnit}`}
+          width={screenWidth}
+          scrollable={duration > 7}
+          decimalPlaces={1}
+        />
+      )}
+    </Fragment>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -191,12 +306,16 @@ export default function Insights() {
           onChange={setDuration}
           style={{ marginBottom: 12, zIndex: 10 }}
         />
-        {orderedIds.map((id) => {
+        {orderedIds.map((id, index) => {
+          if (id === 'trainingVolume' || id === 'trainingTopSet') {
+            if (index !== trainingBlockIndex) return null;
+            return <Fragment key="training">{trainingBlock}</Fragment>;
+          }
           if (id === 'weight') {
             if (!showWeight) return null;
             return (
               <Fragment key="weight">
-                <View style={styles.weightHeader}>
+                <View>
                   <View>
                     <Text style={styles.weightTitle}>Weight</Text>
                     <Text style={styles.weightValue}>
@@ -218,20 +337,6 @@ export default function Insights() {
                         </Text>
                       </>
                     )}
-                  </View>
-                  <View style={styles.unitToggle}>
-                    {(['kg', 'lb'] as const).map((option) => {
-                      const selected = bodyMass.unit === option;
-                      return (
-                        <Pressable
-                          key={option}
-                          onPress={() => bodyMass.setUnit(option)}
-                          style={[styles.unitItem, selected && styles.unitItemSelected]}
-                        >
-                          <Text style={[styles.unitText, selected && styles.unitTextSelected]}>{option}</Text>
-                        </Pressable>
-                      );
-                    })}
                   </View>
                 </View>
                 {weightHistory !== null && (
@@ -264,7 +369,7 @@ export default function Insights() {
             />
           );
         })}
-        {visibleMetrics.length === 0 && !showWeight && (
+        {visibleMetrics.length === 0 && !showWeight && !showTrainingBlock && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No graphs enabled</Text>
             <Text style={styles.emptySubtitle}>Enable the graphs you want to see in Insights.</Text>
@@ -315,15 +420,14 @@ const styles = StyleSheet.create({
   averagesHeader: { marginTop: 8, gap: 2 },
   averagesTitle: { fontSize: 20, fontWeight: '700', color: '#000' },
   averagesSubtitle: { fontSize: 14, color: '#636366' },
-  weightHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   weightTitle: { fontSize: 20, fontWeight: '700', color: '#000' },
   weightValue: { fontSize: 32, fontWeight: '700', color: '#000', marginTop: 2 },
   weightUnit: { fontSize: 18, fontWeight: '500', color: '#636366' },
   weightDate: { fontSize: 14, color: '#636366', marginTop: 2 },
   weightChange: { fontSize: 14, fontWeight: '600', color: '#000', marginTop: 4 },
-  unitToggle: { flexDirection: 'row', backgroundColor: '#f2f4f7', borderRadius: 999, padding: 4, gap: 4 },
-  unitItem: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999 },
-  unitItemSelected: { backgroundColor: '#2296f3' },
-  unitText: { fontSize: 14, fontWeight: '500', color: '#344054' },
-  unitTextSelected: { color: '#ffffff' },
+  trainingChips: { flexDirection: 'row', gap: 8 },
+  trainingChip: { backgroundColor: '#f0f0f3', borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
+  trainingChipSelected: { backgroundColor: '#007AFF' },
+  trainingChipText: { fontSize: 14, fontWeight: '500', color: '#344054' },
+  trainingChipTextSelected: { color: '#ffffff' },
 });

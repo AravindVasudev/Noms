@@ -12,7 +12,9 @@ import { initializeDiary } from '@/lib/diarySlice';
 import { initializeGoals } from '@/lib/goalsSlice';
 import { initializeInsightsSettings } from '@/lib/insightsSettingsSlice';
 import { initializeProfile } from '@/lib/profileSlice';
+import { initializeTraining } from '@/lib/trainingSlice';
 import store, { useAppDispatch, useAppSelector } from '@/lib/store';
+import MiniWorkoutBar from '@/components/ui/mini-workout-bar';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -32,6 +34,7 @@ function AppContent() {
         dispatch(initializeGoals()),
         dispatch(initializeCatalog()),
         dispatch(initializeInsightsSettings()),
+        dispatch(initializeTraining()),
       ]);
       setIsInitialized(true);
     };
@@ -55,7 +58,9 @@ function AppContent() {
           <Stack.Screen name="search" options={{ headerShown: false }} />
           <Stack.Screen name="manage-data" options={{ headerShown: false }} />
           <Stack.Screen name="customize-insights" options={{ headerShown: false }} />
+          <Stack.Screen name="workout" options={{ headerShown: false }} />
         </Stack>
+        <MiniWorkoutBar />
         <StatusBar style="auto" />
         {!signedUp && <Redirect href="/signup" />}
       </GestureHandlerRootView>

@@ -18,6 +18,8 @@ const METRIC_LABELS: Record<InsightMetricId, string> = {
   fat: 'Fat',
   carbs: 'Carbs',
   weight: 'Weight',
+  trainingVolume: 'Training Volume',
+  trainingTopSet: 'Training Top Set',
 };
 
 export default function CustomizeInsightsScreen() {
